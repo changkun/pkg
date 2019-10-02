@@ -10,6 +10,8 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+
+	"github.com/changkun/gobase/lockfree"
 )
 
 // Errors
@@ -135,7 +137,7 @@ func (A *Dense) Set(i, j int, val float64) {
 
 // Inc adds element (i, j) with wal
 func (A *Dense) Inc(i, j int, val float64) {
-	A.data[i*A.n+j] += val
+	lockfree.AddFloat64(&A.data[i*A.n+j], val)
 }
 
 // Mult multiple element (i, j) with wal
