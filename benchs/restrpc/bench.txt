@@ -1,0 +1,11 @@
+name          time/op
+APIRestful-4   528µs ±15%
+APIgRPC-4      194µs ±13%
+
+name          alloc/op
+APIRestful-4  28.5kB ± 5%
+APIgRPC-4     9.19kB ± 0%
+
+name          allocs/op
+APIRestful-4     190 ± 0%
+APIgRPC-4        172 ± 0%

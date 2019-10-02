@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package rpcs;
+
+service Arithmetic {
+    rpc Add(AddInput) returns (AddOutput) {}
+}
+
+message AddInput {
+    float A = 1;
+    float B = 2;
+}
+message AddOutput {
+    float Sum = 1;
+}
