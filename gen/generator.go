@@ -9,9 +9,10 @@ import (
 	"time"
 )
 
+const alphanum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
 // RandomString generates a random string
 func RandomString(n int) string {
-	const alphanum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var str string
 	length := len(alphanum)
@@ -20,4 +21,12 @@ func RandomString(n int) string {
 		str += string(a)
 	}
 	return str
+}
+
+// Fastrand generates a random number by given two seeds
+func Fastrand(seed1, seed2 uint32) uint32 {
+	s1, s0 := seed1, seed2
+	s1 ^= s1 << 17
+	s1 = s1 ^ s0 ^ s1>>7 ^ s0>>16
+	return s0 + s1
 }
