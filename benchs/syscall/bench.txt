@@ -1,0 +1,5 @@
+name                 time/op
+ReadWriteCgoCalls-4  2.00µs ± 5%
+ReadWriteGoCalls-4   3.09µs ± 1%
+ReadWriteNetCalls-4  3.24µs ± 2%
+ReadWritePureCCalls  1.45µs ± 2%

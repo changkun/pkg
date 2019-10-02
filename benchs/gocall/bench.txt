@@ -1,0 +1,4 @@
+name             time/op
+EmptyCgoCalls-4  67.0ns ± 5%
+EmptyGoCalls-4   0.32ns ± 2%
+EmptyCCalls      0.00ns     
