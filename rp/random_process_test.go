@@ -96,18 +96,18 @@ func TestRandomProcess(t *testing.T) {
 		}
 
 		for w, s := range ws {
-			if s != w.Acceptable(remains) {
-				t.Fatalf("want %v, got %v", s, w.Acceptable(remains))
+			if _, ss := w.Acceptable(remains); s != ss {
+				t.Fatalf("want %v, got %v", s, ss)
 			}
 		}
 
 		// if emaining slots are very low, but there are (literaly)
 		// no requests at all, we think this is acceptable.
-		if !(&countProcess{
+		if _, ok := (&countProcess{
 			maxsize:    60,
 			nevents:    []float64{0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
 			confidence: 0.05,
-		}).Acceptable(2) {
+		}).Acceptable(2); !ok {
 			t.Fatalf("want true, got false")
 		}
 	})

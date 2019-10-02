@@ -32,23 +32,6 @@
 //
 //     P(N\leq Q) = \sum_{i=0}^{Q} P(N=i) = \sum_{i=0}^{Q} \frac{\lambda^k \exp{\left(-\lambda\right)}}{k!}
 //
-// Usage in system monitoring:
-//
-//    p := rp.NewCountProcess(15, 0.05)
-//    for {
-//        time.Sleep(time.Second*30)
-//        p.Store(currentNevents) // store number of events during sleep
-//
-//        if !p.Significant() {   // 1. significant test
-//            continue
-//        }
-//        if p.Acceptable(maxNumberOfResource) { // 2. possion+moving avg test
-//            continue
-//        }
-//
-//        ... do scaling work ...
-//    }
-//
 package rp
 
 import (
@@ -63,7 +46,7 @@ import (
 type RandomProcess interface {
 	Store(nevent float64)
 	Significant() bool
-	Acceptable(k float64) bool
+	Acceptable(k float64) (int64, bool)
 }
 
 // CountProcess caches historical number of events,
@@ -121,20 +104,26 @@ func (w *countProcess) Significant() bool {
 // Now, we assume the recent half of window obey poission process.
 // For a historical window of #requests [n_1, n_2, ..., n_p],
 // We evaluates: [n_{p/2}, ..., n_{p}].
-func (w *countProcess) Acceptable(k float64) bool {
+func (w *countProcess) Acceptable(k float64) (int64, bool) {
 	// make a copy
 	w.mu.RLock()
 	events := w.nevents[len(w.nevents)/2:]
 	w.mu.RUnlock()
 
+	// moving average
+	future := mean(events)
+	if future > k {
+		return int64(future), false
+	}
+	if 4*future <= k {
+		return int64(future), true
+	}
+
 	// magnify avg arr accor. acceptance
 	lambda := floats.Sum(events) / (float64(len(events)))
 	acceptprob := (distuv.Poisson{Lambda: lambda}).CDF(k)
 
-	// moving average
-	future := mean(events)
-
-	return acceptprob > 1-w.confidence || future > k
+	return int64(future), acceptprob > 1-w.confidence
 }
 
 // ztest implements a one-tailed (right) z test (assumption: Guassian).
