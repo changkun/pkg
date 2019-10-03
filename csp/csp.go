@@ -5,12 +5,14 @@
 // The paper describes a program specification with several commands:
 //
 // Program structure
+//
 //   <cmd>               ::= <simple cmd> | <structured cmd>
 //   <simple cmd>        ::= <assignment cmd> | <input cmd> | <output cmd>
 //   <structured cmd>    ::= <alternative cmd> | <repetitive cmd> | <parallel cmd>
 //   <cmd list>          ::= {<declaration>; | <cmd>; } <cmd>
 //
 // Parallel command
+//
 //   <parallel cmd>      ::= [<proc>{||<proc>}]
 //   <proc>              ::= <proc label> <cmd list>
 //   <proc label>        ::= <empty> | <identifier> :: | <identifier>(<label subscript>{,<label subscript>}) ::
@@ -22,6 +24,7 @@
 //   <upper bound>       ::= <integer const>
 //
 // Assignment command
+//
 //   <assignment cmd>    ::= <target var> := <expr>
 //   <expr>              ::= <simple expr> | <structured expr>
 //   <structured expr>   ::= <constructor> ( <expr list> )
@@ -32,6 +35,7 @@
 //   <target var list>   ::= <empty> | <target var> {, <target var> }
 //
 // Input and output command
+//
 //   <input cmd>         ::= <source> ? <target var>
 //   <output cmd>        ::= <destination> ! <expr>
 //   <source>            ::= <proc name>
@@ -40,10 +44,12 @@
 //   <subscripts>        ::= <integer expr> {, <integer expr> }
 //
 // Repetitive and alternative command
+//
 //   <repetitive cmd>    ::= * <alternative cmd>
 //   <alternative cmd>   ::= [<guarded cmd> { □ <guarded cmd> }]
 //   <guarded cmd>       ::= <guard> → <cmd list> | ( <range> {, <range> }) <guard> → <cmd list>
 //   <guard>             ::= <guard list> | <guard list>;<input cmd> | <input cmd>
+//   <guard list>        ::= <guard elem> {; <guard elem>}
 //   <guard elem>        ::= <boolean expr> | <declaration>
 //
 // You can find the paper proposed solution in the comment of a function.
@@ -56,6 +62,7 @@ package csp
 // process, east."
 //
 // Solution:
+//
 //   X :: *[c:character; west?c -> east!c]
 func S31_COPY(west, east chan rune) {
 	for c := range west {
@@ -70,6 +77,7 @@ func S31_COPY(west, east chan rune) {
 // character input is not an asterisk."
 //
 // Solution:
+//
 //   X :: *[c:character; west?c ->
 //     [ c != asterisk -> east!c
 //      □ c = asterisk -> west?c;
@@ -107,6 +115,7 @@ func S32_SQUASH(west, east chan rune) {
 // which ends with an odd number of asterisks."
 //
 // Solution:
+//
 //   X :: *[c:character; west?c ->
 //     [ c != asterisk -> east!c
 //      □ c = asterisk -> west?c;
@@ -147,6 +156,7 @@ func S32_SQUASH_EX(west, east chan rune) {
 // of each card."
 //
 // Solution:
+//
 //   *[cardimage:(1..80)characters; cardfile?cardimage ->
 //       i:integer; i := 1;
 //       *[i <= 80 -> X!cardimage(i); i := i+1 ]
@@ -184,6 +194,7 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 // completed with spaces if necessary."
 //
 // Solution:
+//
 //   lineimage:(1..125)character;
 //   i:integer, i:=1;
 //   *[c:character; X?c ->
@@ -196,26 +207,26 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 //     lineprinter!lineimage
 //   ]
 func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
-	cache := make([]rune, 125)
+	lineimage := make([]rune, 125)
 
 	i := 0
 	for c := range X {
-		cache[i] = c
+		lineimage[i] = c
 		if i <= 124 {
 			i++
 		}
 		if i == 125 {
-			cache[i-1] = c
-			lineprinter <- string(cache)
+			lineimage[i-1] = c
+			lineprinter <- string(lineimage)
 			i = 0
 		}
 	}
 	if i > 0 {
 		for i <= 124 {
-			cache[i] = ' '
+			lineimage[i] = ' '
 			i++
 		}
-		lineprinter <- string(cache)
+		lineprinter <- string(lineimage)
 	}
 
 	close(lineprinter)
@@ -229,6 +240,7 @@ func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 // complete with spaces if necessary."
 //
 // Solution:
+//
 //   [west::DISASSEMBLE||X:COPY||east::ASSEMBLE]
 func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
 	west, east := make(chan rune), make(chan rune)
@@ -242,6 +254,7 @@ func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
 // asterisk by an upward arrow."
 //
 // Solution:
+//
 //   [west::DISASSEMBLE||X::SQUASH||east::ASSEMBLE]
 func S36_ConwayProblem(cardfile chan []rune, lineprinter chan string) {
 	west, east := make(chan rune), make(chan rune)
