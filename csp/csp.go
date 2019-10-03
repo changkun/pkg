@@ -2,7 +2,7 @@
 // sequential processes. Communications of the ACM, 21(8), 666–677.
 // https://doi.org/10.1145/359576.359585".
 //
-// hi <at> changkun.us
+// Author: Changkun Ou <hi@changkun.us>
 package csp
 
 // S31_COPY implements Section 3.1 COPY problem:
@@ -10,7 +10,7 @@ package csp
 // process, east."
 //
 // Solution:
-// X :: *[c:character; west?c -> east!c]
+//   X :: *[c:character; west?c -> east!c]
 func S31_COPY(west, east chan rune) {
 	for c := range west {
 		east <- c
@@ -24,12 +24,12 @@ func S31_COPY(west, east chan rune) {
 // character input is not an asterisk."
 //
 // Solution:
-// X :: *[c:character; west?c ->
-//   [ c != asterisk -> east!c
-//    □ c = asterisk -> west?c;
-//          [ c != asterisk -> east!asterisk; east!c
-//           □ c = asterisk -> east!upward arrow
-//   ] ]    ]
+//   X :: *[c:character; west?c ->
+//     [ c != asterisk -> east!c
+//      □ c = asterisk -> west?c;
+//            [ c != asterisk -> east!asterisk; east!c
+//             □ c = asterisk -> east!upward arrow
+//     ] ]    ]
 func S32_SQUASH(west, east chan rune) {
 	for {
 		c, ok := <-west
@@ -61,13 +61,13 @@ func S32_SQUASH(west, east chan rune) {
 // which ends with an odd number of asterisks."
 //
 // Solution:
-// X :: *[c:character; west?c ->
-//   [ c != asterisk -> east!c
-//    □ c = asterisk -> west?c;
-//          [ c != asterisk -> east!asterisk; east!c
-//           □ c = asterisk -> east!upward arrow
-//          ] □ east!asterisk
-//   ]   ]
+//   X :: *[c:character; west?c ->
+//     [ c != asterisk -> east!c
+//      □ c = asterisk -> west?c;
+//            [ c != asterisk -> east!asterisk; east!c
+//             □ c = asterisk -> east!upward arrow
+//            ] □ east!asterisk
+//     ]   ]
 func S32_SQUASH_EX(west, east chan rune) {
 	for {
 		c, ok := <-west
@@ -101,11 +101,11 @@ func S32_SQUASH_EX(west, east chan rune) {
 // of each card."
 //
 // Solution:
-// *[cardimage:(1..80)characters; cardfile?cardimage ->
-//     i:integer; i := 1;
-//     *[i <= 80 -> X!cardimage(i); i := i+1 ]
-//     X!space
-// ]
+//   *[cardimage:(1..80)characters; cardfile?cardimage ->
+//       i:integer; i := 1;
+//       *[i <= 80 -> X!cardimage(i); i := i+1 ]
+//       X!space
+//   ]
 func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 	cardimage := make([]rune, 0, 80)
 	for tmp := range cardfile {
@@ -138,17 +138,17 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 // completed with spaces if necessary."
 //
 // Solution:
-// lineimage:(1..125)character;
-// i:integer, i:=1;
-// *[c:character; X?c ->
-//     lineimage(i) := c;
-//     [i <= 124 -> i := i+1
-//     □ i = 125 -> lineprinter!lineimage; i:=1
-// ]   ];
-// [ i = 1 -> skip
-// □ i > 1 -> *[i <= 125 -> lineimage(i) := space; i := i+1];
-//   lineprinter!lineimage
-// ]
+//   lineimage:(1..125)character;
+//   i:integer, i:=1;
+//   *[c:character; X?c ->
+//       lineimage(i) := c;
+//       [i <= 124 -> i := i+1
+//       □ i = 125 -> lineprinter!lineimage; i:=1
+//   ]   ];
+//   [ i = 1 -> skip
+//   □ i > 1 -> *[i <= 125 -> lineimage(i) := space; i := i+1];
+//     lineprinter!lineimage
+//   ]
 func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 	cache := make([]rune, 125)
 
@@ -183,7 +183,7 @@ func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 // complete with spaces if necessary."
 //
 // Solution:
-// [west::DISASSEMBLE||X:COPY||east::ASSEMBLE]
+//   [west::DISASSEMBLE||X:COPY||east::ASSEMBLE]
 func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
 	west, east := make(chan rune), make(chan rune)
 	go S33_DISASSEMBLE(cardfile, west)
@@ -196,7 +196,7 @@ func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
 // asterisk by an upward arrow."
 //
 // Solution:
-// [west::DISASSEMBLE||X::SQUASH||east::ASSEMBLE]
+//   [west::DISASSEMBLE||X::SQUASH||east::ASSEMBLE]
 func S36_ConwayProblem(cardfile chan []rune, lineprinter chan string) {
 	west, east := make(chan rune), make(chan rune)
 	go S33_DISASSEMBLE(cardfile, west)
