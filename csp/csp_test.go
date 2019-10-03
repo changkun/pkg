@@ -164,3 +164,77 @@ func TestS34_ASSEMBLE(t *testing.T) {
 		}
 	}
 }
+
+func TestS36_Reformat(t *testing.T) {
+	tests := []struct {
+		cardfile [][]rune
+		want     []string
+	}{
+		{
+			cardfile: [][]rune{
+				[]rune("1234567890123456789012345678901234567890123456789012345678901234567890"),
+				[]rune("1234567890123456789012345678901234567890123456789012345678901234567890"),
+			},
+			want: []string{
+				"1234567890123456789012345678901234567890123456789012345678901234567890 123456789012345678901234567890123456789012345678901234",
+				"5678901234567890                                                                                                             ",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		ttt := tt
+		cardfile, lineprinter := make(chan []rune), make(chan string)
+		go csp.S35_Reformat(cardfile, lineprinter)
+		go func() {
+			for _, c := range ttt.cardfile {
+				cardfile <- c
+			}
+			close(cardfile)
+		}()
+
+		received := []string{}
+		for c := range lineprinter {
+			received = append(received, string(c))
+		}
+		if !reflect.DeepEqual(tt.want, received) {
+			t.Fatalf("%v: expected: %v, got: %v", t.Name(), ttt.want, received)
+		}
+	}
+}
+
+func TestS36_ConwayProblem(t *testing.T) {
+	tests := []struct {
+		cardfile [][]rune
+		want     []string
+	}{
+		{
+			cardfile: [][]rune{
+				[]rune("Hello,* ** *CSP.***"),
+			},
+			want: []string{
+				"Hello,* ↑ *CSP.↑*                                                                                                            ",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		ttt := tt
+		cardfile, lineprinter := make(chan []rune), make(chan string)
+		go csp.S36_ConwayProblem(cardfile, lineprinter)
+		go func() {
+			for _, c := range ttt.cardfile {
+				cardfile <- c
+			}
+			close(cardfile)
+		}()
+
+		received := []string{}
+		for c := range lineprinter {
+			received = append(received, string(c))
+		}
+		if !reflect.DeepEqual(tt.want, received) {
+			t.Fatalf("%v: expected: %v, got: %v", t.Name(), ttt.want, received)
+		}
+	}
+}

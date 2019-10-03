@@ -137,6 +137,7 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 // lines of 125 characters on a lineprinter. The last line should be
 // completed with spaces if necessary."
 //
+// Solution:
 // lineimage:(1..125)character;
 // i:integer, i:=1;
 // *[c:character; X?c ->
@@ -173,4 +174,32 @@ func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 
 	close(lineprinter)
 	return
+}
+
+// S35_Reformat implements Section 3.5 Reformat problem:
+// "Read a sequence of cards of 80 characters each, and print the
+// characters on a lineprinter at 125 characters per line. Every card
+// should be followed by an extra space, and the last line should be
+// complete with spaces if necessary."
+//
+// Solution:
+// [west::DISASSEMBLE||X:COPY||east::ASSEMBLE]
+func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
+	west, east := make(chan rune), make(chan rune)
+	go S33_DISASSEMBLE(cardfile, west)
+	go S31_COPY(west, east)
+	S34_ASSEMBLE(east, lineprinter)
+}
+
+// S36_ConwayProblem implements Section 3.6 Conway's Problem:
+// "Adapt the above program to replace every pair of consecutive
+// asterisk by an upward arrow."
+//
+// Solution:
+// [west::DISASSEMBLE||X::SQUASH||east::ASSEMBLE]
+func S36_ConwayProblem(cardfile chan []rune, lineprinter chan string) {
+	west, east := make(chan rune), make(chan rune)
+	go S33_DISASSEMBLE(cardfile, west)
+	go S32_SQUASH_EX(west, east)
+	S34_ASSEMBLE(east, lineprinter)
 }
