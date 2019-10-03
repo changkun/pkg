@@ -26,3 +26,24 @@ func TestS31_COPY(t *testing.T) {
 		t.Fatalf("%v: expected: %v, got: %v", t.Name(), characters, string(received))
 	}
 }
+
+func TestS32_SQUASH(t *testing.T) {
+	characters := "Hello,* ** *CSP."
+	expected := "Hello,* ↑ *CSP."
+
+	west, east := make(chan rune), make(chan rune)
+	go csp.S32_SQUASH(west, east)
+	go func() {
+		for _, c := range characters {
+			west <- c
+		}
+		close(west)
+	}()
+	received := make([]rune, 0, len(expected))
+	for r := range east {
+		received = append(received, r)
+	}
+	if string(received) != expected {
+		t.Fatalf("%v: expected: %v, got: %v", t.Name(), expected, string(received))
+	}
+}
