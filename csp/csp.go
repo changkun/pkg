@@ -136,27 +136,39 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 // "To read a stream of characters from process X and print them in
 // lines of 125 characters on a lineprinter. The last line should be
 // completed with spaces if necessary."
+//
+// lineimage:(1..125)character;
+// i:integer, i:=1;
+// *[c:character; X?c ->
+//     lineimage(i) := c;
+//     [i <= 124 -> i := i+1
+//     □ i = 125 -> lineprinter!lineimage; i:=1
+// ]   ];
+// [ i = 1 -> skip
+// □ i > 1 -> *[i <= 125 -> lineimage(i) := space; i := i+1];
+//   lineprinter!lineimage
+// ]
 func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
-	cache := make([]rune, 0, 125)
+	cache := make([]rune, 125)
 
 	i := 0
 	for c := range X {
-		if i < 125 {
-			cache = append(cache, c)
+		cache[i] = c
+		if i <= 124 {
 			i++
-			continue
+		}
+		if i == 125 {
+			cache[i-1] = c
+			lineprinter <- string(cache)
+			i = 0
+		}
+	}
+	if i > 0 {
+		for i <= 124 {
+			cache[i] = ' '
+			i++
 		}
 		lineprinter <- string(cache)
-		i = 0
-		cache = cache[:0]
-		cache = append(cache, c)
-	}
-	if i != 124 {
-		cache = append(cache, ' ')
-	}
-	lineprinter <- string(cache)
-	if i == 124 {
-		lineprinter <- " "
 	}
 
 	close(lineprinter)
