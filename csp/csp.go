@@ -131,3 +131,34 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 	// }
 	// close(X)
 }
+
+// S34_ASSEMBLE implements Section 3.4 ASSEMBLE problem:
+// "To read a stream of characters from process X and print them in
+// lines of 125 characters on a lineprinter. The last line should be
+// completed with spaces if necessary."
+func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
+	cache := make([]rune, 0, 125)
+
+	i := 0
+	for c := range X {
+		if i < 125 {
+			cache = append(cache, c)
+			i++
+			continue
+		}
+		lineprinter <- string(cache)
+		i = 0
+		cache = cache[:0]
+		cache = append(cache, c)
+	}
+	if i != 124 {
+		cache = append(cache, ' ')
+	}
+	lineprinter <- string(cache)
+	if i == 124 {
+		lineprinter <- " "
+	}
+
+	close(lineprinter)
+	return
+}
