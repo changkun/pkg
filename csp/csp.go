@@ -55,3 +55,40 @@ func S32_SQUASH(west, east chan rune) {
 	}
 	close(east)
 }
+
+// S33_DISASSEMBLE implements Section 3.3 DISASSEMBLE problem:
+// "to read cards from a cardfile and output to process X the stream of
+// characters they contain. An extra space should be inserted at the end
+// of each card."
+//
+// Solution:
+// *[cardimage:(1..80)characters; cardfile?cardimage ->
+//     i:integer; i := 1;
+//     *[i <= 80 -> X!cardimage(i); i := i+1 ]
+//     X!space
+// ]
+func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
+	cardimage := make([]rune, 0, 80)
+	for tmp := range cardfile {
+		if len(tmp) > 80 {
+			cardimage = append(cardimage, tmp[:80]...)
+		} else {
+			cardimage = append(cardimage, tmp[:len(tmp)]...)
+		}
+		for i := 0; i < len(cardimage); i++ {
+			X <- cardimage[i]
+		}
+		X <- ' '
+		cardimage = cardimage[:0]
+	}
+	close(X)
+
+	// Alternative solution (But wrong):
+	// for cardimage := range cardfile {
+	// 	for _, c := range cardimage {
+	// 		X <- c
+	// 	}
+	// 	X <- ' '
+	// }
+	// close(X)
+}
