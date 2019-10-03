@@ -48,6 +48,27 @@ func TestS32_SQUASH(t *testing.T) {
 	}
 }
 
+func TestS32_SQUASH_EX(t *testing.T) {
+	characters := "Hello,* ** *CSP.***"
+	expected := "Hello,* ↑ *CSP.↑*"
+
+	west, east := make(chan rune), make(chan rune)
+	go csp.S32_SQUASH_EX(west, east)
+	go func() {
+		for _, c := range characters {
+			west <- c
+		}
+		close(west)
+	}()
+	received := make([]rune, 0, len(expected))
+	for r := range east {
+		received = append(received, r)
+	}
+	if string(received) != expected {
+		t.Fatalf("%v: expected: %v, got: %v", t.Name(), expected, string(received))
+	}
+}
+
 func TestS33_DISASSEMBLE(t *testing.T) {
 	cardfiles := [][]rune{
 		[]rune("Hello,CSP"),

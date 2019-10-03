@@ -10,7 +10,7 @@ package csp
 // process, east."
 //
 // Solution:
-// X :: *[c:character; west>c -> east!c]
+// X :: *[c:character; west?c -> east!c]
 func S31_COPY(west, east chan rune) {
 	for c := range west {
 		east <- c
@@ -49,6 +49,45 @@ func S32_SQUASH(west, east chan rune) {
 				east <- c
 			}
 			if string(c) == "*" {
+				east <- '↑'
+			}
+		}
+	}
+	close(east)
+}
+
+// S32_SQUASH_EX implements Section 3.2 SQUASH exercise:
+// "(2) As an exercise, adapt this process to deal sensibly with input
+// which ends with an odd number of asterisks."
+//
+// Solution:
+// X :: *[c:character; west?c ->
+//   [ c != asterisk -> east!c
+//    □ c = asterisk -> west?c;
+//          [ c != asterisk -> east!asterisk; east!c
+//           □ c = asterisk -> east!upward arrow
+//          ] □ east!asterisk
+//   ]   ]
+func S32_SQUASH_EX(west, east chan rune) {
+	for {
+		c, ok := <-west
+		if !ok {
+			break
+		}
+		if c != '*' {
+			east <- c
+		}
+		if c == '*' {
+			c, ok = <-west
+			if !ok {
+				east <- '*'
+				break
+			}
+			if c != '*' {
+				east <- '*'
+				east <- c
+			}
+			if c == '*' {
 				east <- '↑'
 			}
 		}
