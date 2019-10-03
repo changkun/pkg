@@ -2,6 +2,52 @@
 // sequential processes. Communications of the ACM, 21(8), 666–677.
 // https://doi.org/10.1145/359576.359585".
 //
+// The paper describes a program specification with several commands:
+//
+// Program structure
+//   <cmd>               ::= <simple cmd> | <structured cmd>
+//   <simple cmd>        ::= <assignment cmd> | <input cmd> | <output cmd>
+//   <structured cmd>    ::= <alternative cmd> | <repetitive cmd> | <parallel cmd>
+//   <cmd list>          ::= {<declaration>; | <cmd>; } <cmd>
+//
+// Parallel command
+//   <parallel cmd>      ::= [<proc>{||<proc>}]
+//   <proc>              ::= <proc label> <cmd list>
+//   <proc label>        ::= <empty> | <identifier> :: | <identifier>(<label subscript>{,<label subscript>}) ::
+//   <label subscript>   ::= <integer const> | <range>
+//   <integer constant>  ::= <numeral> | <bound var>
+//   <bound var>         ::= <identifier>
+//   <range>             ::= <bound variable>:<lower bound>..<upper bound>
+//   <lower bound>       ::= <integer const>
+//   <upper bound>       ::= <integer const>
+//
+// Assignment command
+//   <assignment cmd>    ::= <target var> := <expr>
+//   <expr>              ::= <simple expr> | <structured expr>
+//   <structured expr>   ::= <constructor> ( <expr list> )
+//   <constructor>       ::= <identifier> | <empty>
+//   <expr list>         ::= <empty> | <expr> {, <expr> }
+//   <target var>        ::= <simple var> | <structured target>
+//   <structured target> ::= <constructor> ( <target var list> )
+//   <target var list>   ::= <empty> | <target var> {, <target var> }
+//
+// Input and output command
+//   <input cmd>         ::= <source> ? <target var>
+//   <output cmd>        ::= <destination> ! <expr>
+//   <source>            ::= <proc name>
+//   <destination>       ::= <proc name>
+//   <proc name>         ::= <identifier> | <identifier> ( <subscripts> )
+//   <subscripts>        ::= <integer expr> {, <integer expr> }
+//
+// Repetitive and alternative command
+//   <repetitive cmd>    ::= * <alternative cmd>
+//   <alternative cmd>   ::= [<guarded cmd> { □ <guarded cmd> }]
+//   <guarded cmd>       ::= <guard> → <cmd list> | ( <range> {, <range> }) <guard> → <cmd list>
+//   <guard>             ::= <guard list> | <guard list>;<input cmd> | <input cmd>
+//   <guard elem>        ::= <boolean expr> | <declaration>
+//
+// You can find the paper proposed solution in the comment of a function.
+//
 // Author: Changkun Ou <hi@changkun.us>
 package csp
 
