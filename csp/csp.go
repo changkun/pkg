@@ -52,6 +52,26 @@
 //   <guard list>        ::= <guard elem> {; <guard elem>}
 //   <guard elem>        ::= <boolean expr> | <declaration>
 //
+// Subroutines and Data Representations
+//
+// A coroutine acting as a subroutine is a process operating
+// concurrently with its user process in a prallel command:
+//
+//   [subr::SUBROUTINE||X::USER]
+//
+// The SUBROUTINE will contain a repetitive command:
+//
+//   *[X?(value params) -> ...; X!(result params)]
+//
+// where ... computes the results from the values input. The subroutine
+// will terminate when its user does. The USER will call subroutine by a
+// pair of commands:
+//
+//   subr!(arguments);...;subr?(results)
+//
+// Any commands between these two will be executed concurrently with the
+// subroutine.
+//
 // You can find the paper proposed solution in the comment of a function.
 //
 // Author: Changkun Ou <hi@changkun.us>
