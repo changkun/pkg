@@ -282,3 +282,35 @@ func S36_ConwayProblem(cardfile chan []rune, lineprinter chan string) {
 	go S32_SQUASH_EX(west, east)
 	S34_ASSEMBLE(east, lineprinter)
 }
+
+type S41_In struct {
+	X, Y int
+}
+type S41_Out struct {
+	Quot, Rem int
+}
+
+// S41_DivisionWithRemainder implements Section 4.1 Division With
+// Remainer.
+// "Construct a process to represent a function type subroutine, which
+// accepts a positive dividend and divisor, and returns their integer
+// quotient and remainder. Efficiency is of no concern."
+//
+// Solution:
+//
+//   [DIV::*[x,y:integer; X?(x,y)->
+//         quot,rem:integer; quot := 0; rem := x;
+//         *[rem >= y -> rem := rem - y; quot := quot + 1;]
+//         X!(quot,rem)
+//         ]
+//   ||X::USER]
+func S41_DivisionWithRemainder(in chan S41_In, out chan S41_Out) {
+	v := <-in
+
+	quot, rem := 0, v.X
+	for rem >= v.Y {
+		rem -= v.Y
+		quot++
+	}
+	out <- S41_Out{quot, rem}
+}

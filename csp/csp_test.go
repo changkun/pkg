@@ -238,3 +238,34 @@ func TestS36_ConwayProblem(t *testing.T) {
 		}
 	}
 }
+
+func TestS41_DivisionWithRemainder(t *testing.T) {
+	tests := []struct {
+		input csp.S41_In
+		want  csp.S41_Out
+	}{
+		{
+			input: csp.S41_In{10, 5},
+			want:  csp.S41_Out{2, 0},
+		},
+		{
+			input: csp.S41_In{3, 2},
+			want:  csp.S41_Out{1, 1},
+		},
+		{
+			input: csp.S41_In{10, 3},
+			want:  csp.S41_Out{3, 1},
+		},
+	}
+
+	for _, tt := range tests {
+		ch := make(chan csp.S41_In)
+		re := make(chan csp.S41_Out)
+		go csp.S41_DivisionWithRemainder(ch, re)
+		ch <- tt.input
+		ret := <-re
+		if !reflect.DeepEqual(tt.want, ret) {
+			t.Fatalf("%v: expected: %v, got: %v", t.Name(), tt.want, ret)
+		}
+	}
+}
