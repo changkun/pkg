@@ -306,11 +306,48 @@ type S41_Out struct {
 //   ||X::USER]
 func S41_DivisionWithRemainder(in chan S41_In, out chan S41_Out) {
 	v := <-in
+	x, y := v.X, v.Y
 
-	quot, rem := 0, v.X
-	for rem >= v.Y {
-		rem -= v.Y
+	quot, rem := 0, x
+	for rem >= y {
+		rem -= y
 		quot++
 	}
 	out <- S41_Out{quot, rem}
+}
+
+// S42_Factorial implements Section 4.2 Factorial
+// "Compute a factorial by the recursive method, to a given limit."
+//
+// Solution:
+//
+//   [fac(i:1..limit)::
+//   *[n:integer;fac(i-1)?n ->
+//     [n=0 -> fac(i-1)!1
+//     □ n>0 -> fac(i+1)!n-1;
+//       r:integer; fac(i+1)?r; fac(i-1)!(n*r)
+//   ]] || fac(0)::USER ]
+//
+// Note that the solution above from original paper is wrong.
+// Check the code below for some fixes.
+func S42_Factorial(fac []chan int, limit int) {
+	for i := 1; i <= limit; i++ {
+		go func(i int) {
+			n := <-fac[i-1]
+			if n == 0 {
+				fac[i-1] <- 1
+			} else if n > 0 {
+				// Note that here we check if i equals limit.
+				// The original solution in the paper fails to terminate
+				// if user input is equal or higher than the given limit.
+				if i == limit {
+					fac[i-1] <- n
+				} else {
+					fac[i] <- n - 1
+					r := <-fac[i]
+					fac[i-1] <- n * r
+				}
+			}
+		}(i)
+	}
 }

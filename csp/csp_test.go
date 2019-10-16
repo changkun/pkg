@@ -263,9 +263,73 @@ func TestS41_DivisionWithRemainder(t *testing.T) {
 		re := make(chan csp.S41_Out)
 		go csp.S41_DivisionWithRemainder(ch, re)
 		ch <- tt.input
-		ret := <-re
-		if !reflect.DeepEqual(tt.want, ret) {
-			t.Fatalf("%v: expected: %v, got: %v", t.Name(), tt.want, ret)
+		got := <-re
+		if !reflect.DeepEqual(tt.want, got) {
+			t.Fatalf("%v: expected: %v, got: %v", t.Name(), tt.want, got)
+		}
+	}
+}
+
+func TestS42_Factorial(t *testing.T) {
+	tests := []struct {
+		limit int
+		user  int
+		want  int
+	}{
+		{
+			limit: 5,
+			user:  0,
+			want:  1,
+		},
+		{
+			limit: 5,
+			user:  1,
+			want:  1,
+		},
+		{
+			limit: 5,
+			user:  2,
+			want:  2,
+		},
+		{
+			limit: 5,
+			user:  3,
+			want:  6,
+		},
+		{
+			limit: 5,
+			user:  4,
+			want:  24,
+		},
+		{
+			limit: 5,
+			user:  5,
+			want:  120,
+		},
+		{
+			limit: 5,
+			user:  6,
+			want:  720,
+		},
+		{
+			limit: 5,
+			user:  7,
+			want:  2520,
+		},
+	}
+
+	for _, tt := range tests {
+		fac := make([]chan int, tt.limit+1)
+		for i := 0; i <= tt.limit; i++ {
+			fac[i] = make(chan int)
+		}
+		csp.S42_Factorial(fac, tt.limit)
+
+		fac[0] <- tt.user
+
+		got := <-fac[0]
+		if got != tt.want {
+			t.Fatalf("%v: expected: %v, got: %v", t.Name(), tt.want, got)
 		}
 	}
 }
