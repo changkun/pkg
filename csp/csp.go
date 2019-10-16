@@ -74,8 +74,16 @@
 //
 // You can find the paper proposed solution in the comment of a function.
 //
+// Monitors and Scheduling
+//
+// A monitor is prepared to communicate with any of its user processes (
+// i.e. whichever of them calls first) it will use a guarded command
+// with a range.
+//
 // Author: Changkun Ou <hi@changkun.us>
 package csp
+
+import "runtime"
 
 // S31_COPY implements Section 3.1 COPY problem:
 // "Write a process X to copy characters output by process west to
@@ -430,7 +438,7 @@ func (s *S43_SmallSetOfIntegers) Insert(n int, done chan bool) {
 	return
 }
 
-// S44_Scan implements Section 4.3 Scanning a Set
+// S44_Scan implements Section 4.4 Scanning a Set
 // "Extend the solution to 4.3 by providing a fast method for scanning
 // all members of the set without changing the value of the set. The
 // user program will contain a repetitive command of the form."
@@ -446,4 +454,49 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 		recv <- v
 	}
 	close(recv)
+}
+
+// S51_BoundedBuffer implements Section 5.1 Bounded Buffer
+// "Construct a buffering process X to smooth variations in the speed of
+// output of portions by a producer process and input by a consumer
+// process. The consumer contains pairs of commands X!more();X?p, and
+// the producer contains commands of the form X!p. The buffer should
+// contain up to ten portions."
+//
+// Solution:
+//
+//   X::
+//   buffer:(0..9)portion;
+//   in,out:integer; in:=0; out := 0;
+//   comment 0 <= out <= in <= out+10;
+//     *[in < out + 10; producer?buffer(in mod 10) -> in := in + 1
+//     □ out < in; consumer?more() -> consumer!buffer(out mod 10);
+//        out := out + 1 ]
+func S51_BoundedBuffer() (chan int, chan int) {
+	in, out := 0, 0
+	size := 10
+	buffer := make([]int, size)
+	producer, consumer := make(chan int), make(chan int)
+
+	go func() {
+		for {
+			if in < out+size {
+				select {
+				case v := <-producer:
+					buffer[in%size] = v
+					in++
+				default:
+				}
+			}
+			if out < in {
+				select {
+				case consumer <- buffer[out%size]:
+					out++
+				default:
+				}
+			}
+			runtime.Gosched()
+		}
+	}()
+	return producer, consumer
 }

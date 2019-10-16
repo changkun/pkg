@@ -394,3 +394,18 @@ func TestS44_Scan(t *testing.T) {
 		i++
 	}
 }
+
+func TestS51_BoundedBuffer(t *testing.T) {
+	pro, con := csp.S51_BoundedBuffer()
+	go func() {
+		for i := 0; i < 100; i++ {
+			pro <- i
+		}
+	}()
+	for i := 0; i < 100; i++ {
+		v := <-con
+		if i != v {
+			t.Fatalf("%v: expected %v, got %v", t.Name(), i, v)
+		}
+	}
+}
