@@ -333,3 +333,36 @@ func TestS42_Factorial(t *testing.T) {
 		}
 	}
 }
+
+func TestS43_SmallSetOfIntegers(t *testing.T) {
+	set := csp.NewS43_SmallSetOfIntegers()
+
+	for i := 0; i < 100; i++ {
+		done, has := make(chan bool), make(chan bool)
+		go set.Insert(i, done)
+		if <-done {
+			go set.Has(i, has)
+			if <-has {
+				continue
+			}
+			t.Fatalf("%v: Has not found, value: %v", t.Name(), i)
+		}
+		t.Fatalf("%v: Insert undone, value: %v", t.Name(), i)
+	}
+
+	for i := 100; i < 200; i++ {
+		done := make(chan bool)
+		go set.Insert(i, done)
+		if <-done {
+			t.Fatalf("%v: Insert should not done, but done, value: %v", t.Name(), i)
+		}
+	}
+
+	for i := 100; i < 200; i++ {
+		has := make(chan bool)
+		go set.Has(i, has)
+		if <-has {
+			t.Fatalf("%v: Has should not found, but found, value: %v", t.Name(), i)
+		}
+	}
+}

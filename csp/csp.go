@@ -351,3 +351,81 @@ func S42_Factorial(fac []chan int, limit int) {
 		}(i)
 	}
 }
+
+// S43_SmallSetOfIntegers implements Section 4.3 Small Set Of Integers.
+// "To represent a set of not more than 100 integers as a process, S,
+// which accepts two kinds of instruction from its calling process X:
+// (1) S!insert(n), insert the integer n in the set and
+// (2) S!has(n); ...; S?b, b is set true if n is in the set, and false
+// otherwise. The initial value of the set is empty"
+//
+// Solution:
+//
+//   S::
+//   content(0..99)integer; size:integer; size := 0;
+//   *[n:integer; X?has(n) -> SEARCH; X!(i<size)
+//   □ n:integer; X?insert(n) -> SEARCH;
+//         [i<size -> skip
+//         □i = size; size<100 ->
+//            content(size) := n; size := size+1
+//   ]]
+//
+// where SEARCH is an abbreviation for:
+//
+//   i:integer; i := 0;
+//   *[i<size; conent(i) != n -> i:=i+1]
+//
+type S43_SmallSetOfIntegers struct {
+	content []int
+	size    int
+}
+
+// NewS43_SmallSetOfIntegers returns a S43_SmallSetOfIntegers
+func NewS43_SmallSetOfIntegers() S43_SmallSetOfIntegers {
+	return S43_SmallSetOfIntegers{content: make([]int, 100)}
+}
+
+// SEARCH returns the index of n if it is found in the set,
+// otherwise returns the size of the set.
+func (s *S43_SmallSetOfIntegers) SEARCH(n int) int {
+	for i := 0; i < s.size; i++ {
+		if s.content[i] != n {
+			continue
+		}
+		return i
+	}
+	return s.size
+}
+
+// Has searches in the set given n, has receives true if n is found.
+func (s *S43_SmallSetOfIntegers) Has(n int, has chan bool) {
+	defer close(has)
+
+	if s.SEARCH(n) < s.size {
+		has <- true
+		return
+	}
+	has <- false
+	return
+}
+
+// Insert inserts given n, done recieves true if n is inserted.
+func (s *S43_SmallSetOfIntegers) Insert(n int, done chan bool) {
+	defer close(done)
+
+	i := s.SEARCH(n)
+	if i < s.size {
+		done <- false
+		return // nothing to do
+	}
+	// not found, insert to the array
+	if i == s.size && s.size < 100 {
+		s.content[s.size] = n
+		s.size++
+		done <- true
+		return
+	}
+
+	done <- false
+	return
+}
