@@ -429,3 +429,21 @@ func (s *S43_SmallSetOfIntegers) Insert(n int, done chan bool) {
 	done <- false
 	return
 }
+
+// S44_Scan implements Section 4.3 Scanning a Set
+// "Extend the solution to 4.3 by providing a fast method for scanning
+// all members of the set without changing the value of the set. The
+// user program will contain a repetitive command of the form."
+//
+// Solution:
+//
+//   S!scan(); more:boolean; more:=true;
+//   *[more;x:integer;S?next(x)->...deal with x ... .
+//   □ more;S?noneleft()->more:=false]
+//
+func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
+	for _, v := range s.content {
+		recv <- v
+	}
+	close(recv)
+}

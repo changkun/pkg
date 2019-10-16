@@ -366,3 +366,31 @@ func TestS43_SmallSetOfIntegers(t *testing.T) {
 		}
 	}
 }
+
+func TestS44_Scan(t *testing.T) {
+	set := csp.NewS43_SmallSetOfIntegers()
+
+	for i := 0; i < 100; i++ {
+		done, has := make(chan bool), make(chan bool)
+		go set.Insert(i, done)
+		if <-done {
+			go set.Has(i, has)
+			if <-has {
+				continue
+			}
+			t.Fatalf("%v: Has not found, value: %v", t.Name(), i)
+		}
+		t.Fatalf("%v: Insert undone, value: %v", t.Name(), i)
+	}
+
+	readch := make(chan int)
+	go set.S44_Scan(readch)
+
+	i := 0
+	for v := range readch {
+		if v != i {
+			t.Fatalf("%v: scan op read inconsistency, expect %v, got %v", t.Name(), i, v)
+		}
+		i++
+	}
+}
