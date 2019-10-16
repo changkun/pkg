@@ -456,6 +456,48 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 	close(recv)
 }
 
+// S45_RecursiveSmallSetOfIntegers implements Section 4.5 Recursive
+// Data Representation: Small Set of Integers.
+// "Same as above, but an array of processes is to be used to achieve a
+// high degree of parallelism. Each process should contain at most one
+// number. When it contains no number, it should answer 'false' to all
+// inquiries about membership. On the first insertion, it changes to a
+// second phase of behavior, in which it deals with instructions from
+// its predecessor, passing some of them on to its successor. The
+// calling process will be named S(0). For efficiency, the set should be
+// sorted, i.t. the i-th process should contain the i-th largest number."
+//
+// Solution:
+//
+//   S(i:1..100)::
+//   *[n:integer; S(i-1)?has(n)->S(0)!false
+//   □ n:integer; S(i-1)?insert(n)->
+//      *[m:integer; S(i-1)?has(m)->
+//         [m<=n->S(0)!(m=n)
+//         □m>n-->S(i+1)!has(m)
+//       ]
+//      □m:integer; S(i-1)?insert(m)->
+//       [m<n->S(i-1)!insert(m); n:=m
+//       □m=n->skip
+//       □m>n->S(i+1)!insert(m)
+//   ]]]
+
+// S46_RemoveTheLeastMember implements Section 4.6 Multiple Exits:
+// Remove the Least Member.
+// "Exercise: Extend the above solution to respond to a command to yield
+// the least member of the set and to remove it from the set. The user
+// program will invoke the facility by a pair of commands:
+//
+//  S(1)!least();[x:integer;S(1)?x-> ... deal with x ...
+//               □S(1)?nonleft()-> ... ]
+//
+// or if he wishes to scan and empty the set, he may write:
+//
+//  S(1)!least();more:boolean;more:=true;
+//               *[more;xinteger;S(1)?x-> ...deal with x...; S(1)!least())
+//                □ more;S(1)?noneleft()->more:=false]
+// "
+
 // S51_BoundedBuffer implements Section 5.1 Bounded Buffer
 // "Construct a buffering process X to smooth variations in the speed of
 // output of portions by a producer process and input by a consumer
@@ -499,4 +541,150 @@ func S51_BoundedBuffer() (chan int, chan int) {
 		}
 	}()
 	return producer, consumer
+}
+
+// S52_IntegerSemaphore implements Section 5.2 Integer Semaphore.
+// "To implement an integer semaphore, S, shared among an array
+// X(i:1..100) of client processes. Each process many increment the
+// semaphore by S!V() or delayed if the value of the semaphore is not
+// positive."
+//
+// Solution:
+//
+//   S::val:integer; val:=0;
+//   *[(i:1..100)X(i)?V()->val:=val+1
+//   □ (i:1..100)val>0;X(i)?P()->val:=val-1]
+type S52_IntegerSemaphore struct {
+	val int
+}
+
+func NewS52_IntegerSemaphore() S52_IntegerSemaphore {
+	return S52_IntegerSemaphore{}
+}
+
+func (s *S52_IntegerSemaphore) P(done chan bool) {
+	s.val--
+	done <- true
+	close(done)
+}
+
+func (s *S52_IntegerSemaphore) V(done chan bool) {
+	for {
+		if s.val > 0 {
+			runtime.Gosched()
+			continue
+		}
+		break
+	}
+	s.val++
+	done <- true
+	close(done)
+}
+
+// S53_DiningPhilosophers implements Section 5.3 Dining Philosophers
+// "Five philosophers spend their lives thinking and eating. The
+// philosophers share a common dining room where there is a curcular
+// table surrounded by five chairs, each belonging to one philosopher.
+// In the center of the table there is a large bowl of spaghetti, and
+// the table is laid with five forks. On feeling hungry, a philosopher
+// enters the dinning room, sits in his own chair, and picks up the fork
+// on the left of his place. Unfortunately, the spaghetti is so tangled
+// that he needs to pick up and use the fork on his right as well. When
+// he has finished, the puts down both forks, and leaves the room. The
+// room should keep a count of the number of philosophers in it."
+//
+// Solution:
+//
+// The behavior of the i-th philosopher may be described as follows:
+//
+//   PHIL = *[...during ith lifetime ... ->
+//            THINK;
+//            room!enter();
+//            fork(i)!pickup();fork((i+1)mod5)!pickup();
+//            EAT;
+//            fork(i)!putdown();fork((i+1)mod5)!putdown();
+//            room!next()]
+//
+// The fate of i-th fork is to be picked up and put down by a
+// philosopher sitting on either side of it
+//
+//   FORK = *[phil(i)?pickup()->phil(i)?putdown()
+//          □ phil((i-1)mod5)?pickup()->phil((i-1)mod5)?putdown()]
+//
+// The story of the room may be simply told:
+//
+//   ROOM = occupancy:integer; occupancy := 0;
+//          *[(i:0..4)phil(i)?enter()->occupancy:=occupancy+1
+//          □ (i:0..4)phil(i)?exit()->occupancy:=occupancy-1]
+//
+// All these components operate in parallel:
+//
+//   [room::ROOM||fork(i:0..4)::FORK||phil(i:0..4)::PHIL]
+func S53_DiningPhilosophers() {
+
+}
+
+// S61_TheSieveOfEratosthenes implements Section 6.1 Prime Numbers: The
+// Sieve of Eratosthenes.
+// "To print in ascending order all primes less than 10000. Use an array
+// of processes, SIEVE, in which each process inputs a prime from its
+// predecessor and prints it. The process then inputs an ascending
+// stream of numbers from its predecessor and passes them on to its
+// successor, suppressing any that are multiples of the original prime."
+//
+// Solution:
+//
+//   [SIEVE(i:1..100)::
+//    p,mp:integer;
+//    SIEVE(i-1)?p;
+//    print!p;
+//    mp:=p; comment mp is a multiple of p;
+//   *[m:integer; SIEVE(i-1)?m->
+//      *[m>mp->mp:=mp+p];
+//       [m=mp->skip □ m<mp->SIEVE(i+1)!m ]
+//    ]
+//   || SIEVE(0)::print!2; n:integer; n:=3;
+//         *[n<10000->SIEVE(1)!n;n:=n+2]
+//   || SIEVE(101)::*[n:integer;SIEVE(100)?n->print!n]
+//   || print::*[(i:0..101)n:integer;SIEVE(i)?n->...]
+//   ]
+func S61_TheSieveOfEratosthenes() {
+
+}
+
+// S62_MatrixMultiplication implements Section 6.2 An interative Array:
+// Matrix Multiplication.
+// "A square matrix A of order 3 is given. Three streams are to be input,
+// each stream representing a column of an array IN. There streams are
+// to be output, each representing a column of the product matrix IN x A.
+// After an initial delay, the results are to be produced at the same
+// rate as the input is consumed. Consequently, a high degree of
+// parallelism is required. Each of the nine nonborder nodes inputs a
+// vector components from the west and a partial sum from the north.
+// Each node outputs the vector component to its east, and an updated
+// partial sum to the south. The input data is produced by the west
+// border nodes, and the desired results are consumed by south border
+// nodes. The north border is a constant source of zeros and the east
+// border is just a sink. No provision need be made for termination nor
+// for changing the values of the array A."
+//
+// Solution: There are twenty-one nodes, in five groups, comparising the
+// central square and the four borders:
+//
+//   [M(i:1..3,0)::WEST
+//   ||M(0,j:1..3)::NORTH
+//   ||M(i:1..3,4)::EAST
+//   ||M(4,j:1..3)::SOUTH
+//   ||M(i:1..3,j:1..3)::CENTER]
+//
+// The WEST and SOUTH borders are processes of the user program; the
+// remaining processes are:
+//
+//   NORTH = *[true -> M(1,j)!0]
+//   EAST = *[x:real; M(i,3)?x->skip]
+//   CENTER = *[x:real;M(i,j-1)?x->
+//             M(i,j+1)!x;sum:real;
+//             M(i-1,j)?sum;M(i+1,j)!(A(i,j)*x+sum)]
+func S62_MatrixMultiplication() {
+
 }

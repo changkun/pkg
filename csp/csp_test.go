@@ -2,6 +2,7 @@ package csp_test
 
 import (
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/changkun/gobase/csp"
@@ -408,4 +409,29 @@ func TestS51_BoundedBuffer(t *testing.T) {
 			t.Fatalf("%v: expected %v, got %v", t.Name(), i, v)
 		}
 	}
+}
+
+func TestS52_IntegerSemaphore(t *testing.T) {
+	sem := csp.NewS52_IntegerSemaphore()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		for i := 0; i < 100; i++ {
+			done := make(chan bool)
+			sem.P(done)
+			<-done
+		}
+		wg.Done()
+		println("done")
+	}()
+	go func() {
+		for i := 0; i < 100; i++ {
+			done := make(chan bool)
+			sem.V(done)
+			<-done
+		}
+		wg.Done()
+	}()
+	wg.Wait()
 }
