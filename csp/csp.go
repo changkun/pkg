@@ -641,30 +641,61 @@ func S51_BoundedBuffer() (chan int, chan int) {
 //   *[(i:1..100)X(i)?V()->val:=val+1
 //   □ (i:1..100)val>0;X(i)?P()->val:=val-1]
 type S52_IntegerSemaphore struct {
-	val int
+	inc  chan struct{}
+	dec  chan struct{}
+	done chan struct{}
 }
 
 func NewS52_IntegerSemaphore() S52_IntegerSemaphore {
-	return S52_IntegerSemaphore{}
-}
-
-func (s *S52_IntegerSemaphore) P(done chan bool) {
-	s.val--
-	done <- true
-	close(done)
-}
-
-func (s *S52_IntegerSemaphore) V(done chan bool) {
-	for {
-		if s.val > 0 {
-			runtime.Gosched()
-			continue
-		}
-		break
+	sem := S52_IntegerSemaphore{
+		inc:  make(chan struct{}),
+		dec:  make(chan struct{}),
+		done: make(chan struct{}),
 	}
-	s.val++
-	done <- true
-	close(done)
+	go func() {
+		var n int
+		select {
+		case <-sem.inc:
+			n++
+		case <-sem.done:
+			return
+		}
+		for {
+			select {
+			case <-sem.inc:
+				n++
+			case <-sem.dec:
+				n--
+				// block until next increase
+				if n == 0 {
+					select {
+					case <-sem.inc:
+						n++
+					case <-sem.done:
+						return
+					}
+				}
+			case <-sem.done:
+				return
+			}
+		}
+	}()
+	return sem
+}
+
+// P operator decreases semaphore
+func (s *S52_IntegerSemaphore) P() {
+	s.dec <- struct{}{}
+}
+
+// V operator increases semaphore
+func (s *S52_IntegerSemaphore) V() {
+	s.inc <- struct{}{}
+}
+
+// Close closes the semaphore
+func (s *S52_IntegerSemaphore) Close() {
+	close(s.done)
 }
 
 // S53_DiningPhilosophers implements Section 5.3 Dining Philosophers

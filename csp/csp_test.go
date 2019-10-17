@@ -448,27 +448,23 @@ func TestS51_BoundedBuffer(t *testing.T) {
 }
 
 func TestS52_IntegerSemaphore(t *testing.T) {
-	t.Skip()
 	sem := csp.NewS52_IntegerSemaphore()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	go func() {
 		for i := 0; i < 100; i++ {
-			done := make(chan bool)
-			sem.P(done)
-			<-done
+			sem.P()
 		}
 		wg.Done()
-		println("done")
 	}()
 	go func() {
 		for i := 0; i < 100; i++ {
-			done := make(chan bool)
-			sem.V(done)
-			<-done
+			sem.V()
 		}
 		wg.Done()
 	}()
 	wg.Wait()
+
+	sem.Close()
 }
