@@ -456,23 +456,6 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 	close(recv)
 }
 
-type ChanInt struct {
-	v int
-	c chan int
-}
-
-func (c ChanInt) Has(v int, ch chan bool) {
-	if c.v == v {
-		ch <- true
-	} else {
-		ch <- false
-	}
-	close(ch)
-}
-func (c ChanInt) Insert(v int, ch chan bool) {
-
-}
-
 // S45_RecursiveSmallSetOfIntegers implements Section 4.5 Recursive
 // Data Representation: Small Set of Integers.
 // "Same as above, but an array of processes is to be used to achieve a
@@ -498,24 +481,52 @@ func (c ChanInt) Insert(v int, ch chan bool) {
 //       □m=n->skip
 //       □m>n->S(i+1)!insert(m)
 //   ]]]
-func S45_NewRecursiveSmallSetOfIntegers() (has []chan S45_Has, insert []chan int) {
+//
+// S46_RemoveTheLeastMember implements Section 4.6 Multiple Exits:
+// Remove the Least Member.
+// "Exercise: Extend the above solution to respond to a command to yield
+// the least member of the set and to remove it from the set. The user
+// program will invoke the facility by a pair of commands:
+//
+//  S(1)!least();[x:integer;S(1)?x-> ... deal with x ...
+//               □S(1)?nonleft()-> ... ]
+//
+// or if he wishes to scan and empty the set, he may write:
+//
+//  S(1)!least();more:boolean;more:=true;
+//               *[more;xinteger;S(1)?x-> ...deal with x...; S(1)!least())
+//                □ more;S(1)?noneleft()->more:=false]
+// "
+func S45_S46_NewRecursiveSmallSetOfIntegers() (chan S45_Has, chan int, chan chan S46_Least) {
+	// FIXME: this implementation doesn't close all processes
 	size := 100
-	has = make([]chan S45_Has, size+1)
-	insert = make([]chan int, size+1)
-	for i := 0; i <= size; i++ {
+	has := make([]chan S45_Has, size)
+	insert := make([]chan int, size)
+	least := make([]chan S46_Least, size)
+	leastQuery := make([]chan chan S46_Least, size)
+	for i := 0; i < size; i++ {
 		has[i] = make(chan S45_Has)
 		insert[i] = make(chan int)
+		least[i] = make(chan S46_Least)
+		if i == 0 {
+			leastQuery[i] = make(chan chan S46_Least)
+		}
 
 		go func(i int) {
 			// a goroutine that stores the actual value
 			var n int
 
+		EMPTY:
 			for {
 				select {
 				case h := <-has[i]:
 					h.Response <- false
 				case n = <-insert[i]:
 					goto NONEMPTY
+				case least[i] <- S46_Least{NoneLeft: true}:
+					continue
+				case q := <-leastQuery[i]:
+					q <- S46_Least{NoneLeft: true}
 				}
 			}
 		NONEMPTY:
@@ -540,11 +551,27 @@ func S45_NewRecursiveSmallSetOfIntegers() (has []chan S45_Has, insert []chan int
 					} else if in > n {
 						insert[i+1] <- in
 					}
+				case least[i] <- S46_Least{n, false}:
+					next := <-least[i+1]
+					if next.NoneLeft {
+						goto EMPTY
+					} else {
+						n = next.Least
+					}
+				case l := <-leastQuery[i]:
+
+					next := <-least[i+1]
+					l <- S46_Least{n, next.NoneLeft}
+					if next.NoneLeft {
+						goto EMPTY
+					} else {
+						n = next.Least
+					}
 				}
 			}
 		}(i)
 	}
-	return
+	return has[0], insert[0], leastQuery[0]
 }
 
 type S45_Has struct {
@@ -552,21 +579,10 @@ type S45_Has struct {
 	Response chan bool
 }
 
-// S46_RemoveTheLeastMember implements Section 4.6 Multiple Exits:
-// Remove the Least Member.
-// "Exercise: Extend the above solution to respond to a command to yield
-// the least member of the set and to remove it from the set. The user
-// program will invoke the facility by a pair of commands:
-//
-//  S(1)!least();[x:integer;S(1)?x-> ... deal with x ...
-//               □S(1)?nonleft()-> ... ]
-//
-// or if he wishes to scan and empty the set, he may write:
-//
-//  S(1)!least();more:boolean;more:=true;
-//               *[more;xinteger;S(1)?x-> ...deal with x...; S(1)!least())
-//                □ more;S(1)?noneleft()->more:=false]
-// "
+type S46_Least struct {
+	Least    int
+	NoneLeft bool
+}
 
 // S51_BoundedBuffer implements Section 5.1 Bounded Buffer
 // "Construct a buffering process X to smooth variations in the speed of
