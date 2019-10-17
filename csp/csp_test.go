@@ -468,3 +468,7 @@ func TestS52_IntegerSemaphore(t *testing.T) {
 
 	sem.Close()
 }
+
+func TestS53_DiningPhilosophers(t *testing.T) {
+	csp.S53_DiningPhilosophers()
+}

@@ -83,7 +83,13 @@
 // Author: Changkun Ou <hi@changkun.us>
 package csp
 
-import "runtime"
+import (
+	"fmt"
+	"math/rand"
+	"runtime"
+	"sync"
+	"time"
+)
 
 // S31_COPY implements Section 3.1 COPY problem:
 // "Write a process X to copy characters output by process west to
@@ -738,7 +744,66 @@ func (s *S52_IntegerSemaphore) Close() {
 //
 //   [room::ROOM||fork(i:0..4)::FORK||phil(i:0..4)::PHIL]
 func S53_DiningPhilosophers() {
-
+	// FIXME: may deadlock? mentioned in the exercise
+	size := 5
+	enter := make(chan int)
+	exit := make(chan int)
+	pickup := make([]chan struct{}, size)
+	putdown := make([]chan struct{}, size)
+	for i := 0; i < size; i++ {
+		pickup[i] = make(chan struct{})
+		putdown[i] = make(chan struct{})
+	}
+	THINK := func(i int) {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(10)))
+	}
+	EAT := func(i int) {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(10)))
+	}
+	PHIL := func(i int) {
+		THINK(i)
+		enter <- i
+		pickup[i] <- struct{}{}
+		pickup[(i+1)%5] <- struct{}{}
+		EAT(i)
+		putdown[i] <- struct{}{}
+		putdown[(i+1)%5] <- struct{}{}
+		exit <- i
+	}
+	FORK := func(i int) {
+		for {
+			select {
+			case <-pickup[i]:
+				<-putdown[i]
+			case <-pickup[(i+4)%5]:
+				<-putdown[(i+4)%5]
+			}
+		}
+	}
+	ROOM := func() {
+		occupancy := 0
+		for {
+			select {
+			case i := <-enter:
+				occupancy++
+				fmt.Printf("%v enter room, occupancy: %v\n", i, occupancy)
+			case i := <-exit:
+				occupancy--
+				fmt.Printf("%v exit room, occupancy: %v\n", i, occupancy)
+			}
+		}
+	}
+	go ROOM()
+	wg := sync.WaitGroup{}
+	wg.Add(size)
+	for i := 0; i < size; i++ {
+		go FORK(i)
+		go func(i int) {
+			PHIL(i)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait() // wait until all philosophers are finished.
 }
 
 // S61_TheSieveOfEratosthenes implements Section 6.1 Prime Numbers: The
