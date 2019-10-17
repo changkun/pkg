@@ -396,6 +396,27 @@ func TestS44_Scan(t *testing.T) {
 	}
 }
 
+func TestS45_RecursiveSmallSetOfIntegers(t *testing.T) {
+	has, insert := csp.S45_NewRecursiveSmallSetOfIntegers()
+	for i := 0; i < 100; i++ {
+		check := make(chan bool)
+		has[0] <- csp.S45_Has{V: i, Response: check}
+		if ok := <-check; ok {
+			t.Fatalf("%v: expected not has, got value: %v", t.Name(), i)
+		}
+	}
+
+	for i := 0; i < 100; i++ {
+		insert[0] <- i
+
+		check := make(chan bool)
+		has[0] <- csp.S45_Has{V: i, Response: check}
+		if ok := <-check; !ok {
+			t.Fatalf("%v: expected inserted, got false, value: %v", t.Name(), i)
+		}
+	}
+}
+
 func TestS51_BoundedBuffer(t *testing.T) {
 	pro, con := csp.S51_BoundedBuffer()
 	go func() {

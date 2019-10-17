@@ -456,6 +456,23 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 	close(recv)
 }
 
+type ChanInt struct {
+	v int
+	c chan int
+}
+
+func (c ChanInt) Has(v int, ch chan bool) {
+	if c.v == v {
+		ch <- true
+	} else {
+		ch <- false
+	}
+	close(ch)
+}
+func (c ChanInt) Insert(v int, ch chan bool) {
+
+}
+
 // S45_RecursiveSmallSetOfIntegers implements Section 4.5 Recursive
 // Data Representation: Small Set of Integers.
 // "Same as above, but an array of processes is to be used to achieve a
@@ -465,7 +482,7 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 // second phase of behavior, in which it deals with instructions from
 // its predecessor, passing some of them on to its successor. The
 // calling process will be named S(0). For efficiency, the set should be
-// sorted, i.t. the i-th process should contain the i-th largest number."
+// sorted, i.e. the i-th process should contain the i-th largest number."
 //
 // Solution:
 //
@@ -481,6 +498,59 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 //       □m=n->skip
 //       □m>n->S(i+1)!insert(m)
 //   ]]]
+func S45_NewRecursiveSmallSetOfIntegers() (has []chan S45_Has, insert []chan int) {
+	size := 100
+	has = make([]chan S45_Has, size+1)
+	insert = make([]chan int, size+1)
+	for i := 0; i <= size; i++ {
+		has[i] = make(chan S45_Has)
+		insert[i] = make(chan int)
+
+		go func(i int) {
+			// a goroutine that stores the actual value
+			var n int
+
+			for {
+				select {
+				case h := <-has[i]:
+					h.Response <- false
+				case n = <-insert[i]:
+					goto NONEMPTY
+				}
+			}
+		NONEMPTY:
+			for {
+				select {
+				case h := <-has[i]:
+					if h.V <= n {
+						h.Response <- h.V == n
+					} else {
+						if i == size {
+							h.Response <- false
+						} else {
+							has[i+1] <- h
+						}
+					}
+				case in := <-insert[i]:
+					if in < n {
+						insert[i+1] <- in
+						n = in
+					} else if in == n {
+						continue
+					} else if in > n {
+						insert[i+1] <- in
+					}
+				}
+			}
+		}(i)
+	}
+	return
+}
+
+type S45_Has struct {
+	V        int
+	Response chan bool
+}
 
 // S46_RemoveTheLeastMember implements Section 4.6 Multiple Exits:
 // Remove the Least Member.
