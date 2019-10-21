@@ -43,7 +43,6 @@ func (l *Light) Turn(on bool) (bool, error) {
 	}
 
 	addr := fmt.Sprintf(apiLightState, l.Bridge.Hostname, l.Bridge.Username, l.ID)
-	println(addr)
 	err := net.HTTPRequest(addr,
 		http.MethodPut, []byte(action), &net.RequestParams{Timeout: 100}, &struct{}{})
 	if err != nil {
