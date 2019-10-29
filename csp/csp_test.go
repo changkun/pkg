@@ -472,3 +472,7 @@ func TestS52_IntegerSemaphore(t *testing.T) {
 func TestS53_DiningPhilosophers(t *testing.T) {
 	csp.S53_DiningPhilosophers()
 }
+
+func TestS61_TheSieveOfEratosthenes(t *testing.T) {
+	csp.S61_TheSieveOfEratosthenes(100)
+}

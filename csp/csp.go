@@ -830,8 +830,57 @@ func S53_DiningPhilosophers() {
 //   || SIEVE(101)::*[n:integer;SIEVE(100)?n->print!n]
 //   || print::*[(i:0..101)n:integer;SIEVE(i)?n->...]
 //   ]
-func S61_TheSieveOfEratosthenes() {
+func S61_TheSieveOfEratosthenes(np int) {
 
+	SIEVE := make([]chan int, np+1)
+	for i := 1; i <= np; i++ {
+		SIEVE[i] = make(chan int)
+
+		go func(i int) {
+			p, ok := <-SIEVE[i]
+			if !ok {
+				return
+			}
+			println(p)
+
+			mp := p // mp is a multiple of p
+			for {
+				m := <-SIEVE[i]
+				for m > mp {
+					mp += p
+				}
+				if m < mp {
+					if i < np {
+						SIEVE[i+1] <- m
+					} else {
+						// this fixes a bug in original paper
+						SIEVE[1] <- m
+					}
+				}
+			}
+		}(i)
+	}
+	done := make(chan bool)
+
+	go func() {
+		println(2)
+		for n := 3; n < 10000; n += 2 {
+			SIEVE[1] <- n
+		}
+		done <- true
+	}()
+
+	for {
+		select {
+		case p, ok := <-SIEVE[100]:
+			if !ok {
+				return
+			}
+			println(p)
+		case <-done:
+			return
+		}
+	}
 }
 
 // S62_MatrixMultiplication implements Section 6.2 An interative Array:
