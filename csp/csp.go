@@ -867,6 +867,10 @@ func S61_TheSieveOfEratosthenes(np int) {
 		for n := 3; n < 10000; n += 2 {
 			SIEVE[1] <- n
 		}
+		// FIXME: send n finished does not meaning that all primes are
+		// printed, because of the original algorithm in the paper is
+		// incorrect, our quick fix doesn't guarantee the order of
+		// outputs in ascending order.
 		done <- true
 	}()
 
@@ -916,6 +920,92 @@ func S61_TheSieveOfEratosthenes(np int) {
 //   CENTER = *[x:real;M(i,j-1)?x->
 //             M(i,j+1)!x;sum:real;
 //             M(i-1,j)?sum;M(i+1,j)!(A(i,j)*x+sum)]
-func S62_MatrixMultiplication() {
+type S62_Matrix struct {
+	WEST  []chan int // for input
+	SOUTH []chan int // for output
 
+	in  [][]chan int
+	inA [][]chan int
+
+	A [][]int
+}
+
+func (m *S62_Matrix) NORTH(j int) {
+	for {
+		m.inA[0][j] <- 0.0
+	}
+}
+
+func (m *S62_Matrix) EAST(i int) {
+	for {
+		println("skip:", <-m.in[i][len(m.in[i])-1]) // skip command
+	}
+}
+
+func (m *S62_Matrix) CENTER(i, j int) {
+	for x := range m.in[i][j-1] {
+		m.in[i][j] <- x
+		sum := <-m.inA[i-1][j]
+		fmt.Printf("m.inA[%d][%d]: %v\n", i-1, j-1, m.A[i-1][j-1]*x+sum)
+		m.inA[i][j] <- m.A[i-1][j-1]*x + sum
+	}
+}
+
+func S62_NewMatrix(A [][]int) S62_Matrix {
+	m := S62_Matrix{
+		WEST: make([]chan int, 3),
+		in:   make([][]chan int, 3+1),
+		inA:  make([][]chan int, 3+1),
+		A:    A,
+	}
+
+	for i := 0; i < 3+1; i++ {
+		m.in[i] = make([]chan int, 3+1)
+		m.inA[i] = make([]chan int, 3+1)
+		for j := 0; j < 3+1; j++ {
+			m.in[i][j] = make(chan int)
+			m.inA[i][j] = make(chan int)
+		}
+	}
+
+	for i := 1; i <= 3; i++ {
+		m.WEST[i-1] = m.in[i][0]
+	}
+	m.SOUTH = m.inA[3][1:]
+
+	for i := 1; i <= 3; i++ {
+		go m.NORTH(i)
+		go m.EAST(i)
+		for j := 1; j <= 3; j++ {
+			go m.CENTER(i, j)
+		}
+	}
+
+	return m
+}
+
+func (m *S62_Matrix) S62_Multiply(IN [][]int) (OUT [][]int) {
+	for i := 0; i < 3; i++ {
+		go func(i int) {
+			for j := 0; j < 3; j++ {
+				m.WEST[j] <- IN[i][j]
+			}
+		}(i)
+	}
+
+	OUT = make([][]int, 3)
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	for i := 0; i < 3; i++ {
+		OUT[i] = make([]int, 3)
+		go func(i int) {
+			for j := 0; j < 3; j++ {
+				OUT[i][j] = <-m.SOUTH[i]
+			}
+			wg.Done()
+		}(i)
+	}
+	println(1)
+	wg.Wait()
+	return
 }
