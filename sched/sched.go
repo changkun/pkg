@@ -8,6 +8,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -50,6 +51,7 @@ func Stop() {
 func Wait() {
 	// With function call, no need for runtime.Gosched()
 	for sched0.tasks.length() != 0 {
+		runtime.Gosched()
 	}
 }
 
