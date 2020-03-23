@@ -9,8 +9,9 @@ func New(s string) error {
 }
 
 // Try tries a given function and see if it throw any error
-func Try(e func() error) catch {
-	return catch{err: e(), result: nil}
+func Try(e func() (interface{}, error)) catch {
+	v, err := e()
+	return catch{err: err, result: v}
 }
 
 type catch struct {
@@ -19,10 +20,11 @@ type catch struct {
 }
 
 // Catch catches the error that throwed in Try call.
-func (c catch) Catch(handler func(error) interface{}) catch {
+func (c catch) Catch(handler func(interface{}, error) interface{}) catch {
 	if c.err != nil {
-		c.result = handler(c.err)
+		c.result = handler(c.result, c.err)
 	}
+	c.err = nil
 	return c
 }
 
