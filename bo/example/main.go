@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"time"
 
+	"changkun.de/x/pkg/bo"
 	"github.com/aybabtme/rgbterm"
-	"github.com/changkun/gobase/bo"
 )
 
 // predict gives a use case on how to predict next best point x

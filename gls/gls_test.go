@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/changkun/gobase/gls"
+	"changkun.de/x/pkg/gls"
 )
 
 func TestGLS(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/changkun/gobase/benchs/restrpc/rpcs"
-	"github.com/changkun/gobase/benchs/restrpc/ser"
+	"changkun.de/x/pkg/benchs/restrpc/rpcs"
+	"changkun.de/x/pkg/benchs/restrpc/ser"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )

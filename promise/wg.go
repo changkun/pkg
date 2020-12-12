@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/changkun/gobase/rt"
+	"changkun.de/x/pkg/rt"
 )
 
 // All a list of function to be executed

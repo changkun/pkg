@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/changkun/gobase/gen"
+	"changkun.de/x/pkg/gen"
 )
 
 func TestRandomString(t *testing.T) {

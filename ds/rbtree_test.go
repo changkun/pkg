@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/changkun/gobase/ds"
+	"changkun.de/x/pkg/ds"
 )
 
 type UniqueRand struct {

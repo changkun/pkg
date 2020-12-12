@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/changkun/gobase/lockfree"
+	"changkun.de/x/pkg/lockfree"
 )
 
 func TestAddFloat64(t *testing.T) {

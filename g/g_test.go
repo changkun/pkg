@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/changkun/gobase/g"
+	"changkun.de/x/pkg/g"
 )
 
 func TestGo(t *testing.T) {

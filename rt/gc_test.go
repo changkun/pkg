@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/changkun/gobase/rt"
+	"changkun.de/x/pkg/rt"
 )
 
 func TestGCNotification(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/changkun/gobase/promise"
+	"changkun.de/x/pkg/promise"
 )
 
 func TestAttemptTiming(t *testing.T) {

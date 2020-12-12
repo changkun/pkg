@@ -7,7 +7,7 @@ package gls
 import (
 	"sync"
 
-	"github.com/changkun/gobase/rt"
+	"changkun.de/x/pkg/rt"
 )
 
 var storage sync.Map // map[uint64]map[interface{}]interface{}

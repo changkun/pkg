@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/changkun/gobase/net"
+	"changkun.de/x/pkg/net"
 )
 
 // Light represents an individual light component

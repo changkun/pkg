@@ -1,4 +1,4 @@
-module github.com/changkun/gobase
+module changkun.de/x/pkg
 
 go 1.11
 
@@ -14,7 +14,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/wcharczuk/go-chart v2.0.1+incompatible
-	golang.org/x/perf v0.0.0-20190823172224-ecb187b06eb0 // indirect
+	golang.org/x/sys v0.0.0-20191008105621-543471e840be
 	gonum.org/v1/gonum v0.0.0-20190929233944-b20cf7805fc4
 	google.golang.org/grpc v1.24.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect

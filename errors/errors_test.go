@@ -3,7 +3,7 @@ package errors_test
 import (
 	"testing"
 
-	"github.com/changkun/gobase/errors"
+	"changkun.de/x/pkg/errors"
 )
 
 func TestTryCatch(t *testing.T) {

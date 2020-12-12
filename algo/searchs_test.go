@@ -7,8 +7,8 @@ package algo_test
 import (
 	"testing"
 
-	"github.com/changkun/gobase/algo"
-	"github.com/changkun/gobase/common"
+	"changkun.de/x/pkg/algo"
+	"changkun.de/x/pkg/common"
 )
 
 func TestBinarySearch(t *testing.T) {

@@ -14,7 +14,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/changkun/gobase/bo"
+	"changkun.de/x/pkg/bo"
 	"github.com/pkg/errors"
 	"github.com/wcharczuk/go-chart"
 	"gonum.org/v1/gonum/floats"

@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/changkun/gobase/net"
+	"changkun.de/x/pkg/net"
 )
 
 func TestQueryEncoder(t *testing.T) {

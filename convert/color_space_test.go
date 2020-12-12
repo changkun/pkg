@@ -3,7 +3,7 @@ package convert_test
 import (
 	"testing"
 
-	"github.com/changkun/gobase/convert"
+	"changkun.de/x/pkg/convert"
 )
 
 func BenchmarkLinear2sRGB(b *testing.B) {

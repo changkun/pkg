@@ -8,12 +8,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/changkun/gobase/rt"
+	"changkun.de/x/pkg/rt"
 )
 
 func TestGetFuncName(t *testing.T) {
 	got := rt.GetFuncName(rt.GetFuncName)
-	want := "github.com/changkun/gobase/rt.GetFuncName"
+	want := "changkun.de/x/pkg/rt.GetFuncName"
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("want %v, got %v", want, got)
 	}

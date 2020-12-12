@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/changkun/gobase/promise"
+	"changkun.de/x/pkg/promise"
 )
 
 func TestWaitGroupOnTimeout(t *testing.T) {

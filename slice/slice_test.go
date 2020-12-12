@@ -7,7 +7,7 @@ package slice_test
 import (
 	"testing"
 
-	"github.com/changkun/gobase/slice"
+	"changkun.de/x/pkg/slice"
 )
 
 func TestIsStringsContains(t *testing.T) {

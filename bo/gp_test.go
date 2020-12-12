@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/changkun/gobase/bo"
+	"changkun.de/x/pkg/bo"
 	"gonum.org/v1/gonum/floats"
 )
 

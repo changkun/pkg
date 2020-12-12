@@ -3,7 +3,7 @@ package gocall_test
 import (
 	"testing"
 
-	"github.com/changkun/gobase/benchs/gocall"
+	"changkun.de/x/pkg/benchs/gocall"
 )
 
 func BenchmarkEmptyCgoCalls(b *testing.B) {

@@ -4,7 +4,7 @@
 
 package algo
 
-import "github.com/changkun/gobase/common"
+import "changkun.de/x/pkg/common"
 
 // BinarySearch implements binary search algorithm.
 // It returns the index if element x is found in arr

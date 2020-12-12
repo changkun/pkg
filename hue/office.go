@@ -1,6 +1,6 @@
 package main
 
-import "github.com/changkun/gobase/hue/cmd"
+import "changkun.de/x/pkg/hue/cmd"
 
 func main() {
 	cmd.Execute()

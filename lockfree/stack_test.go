@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/changkun/gobase/lockfree"
+	"changkun.de/x/pkg/lockfree"
 )
 
 func TestStackPopEmpty(t *testing.T) {

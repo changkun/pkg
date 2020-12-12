@@ -7,7 +7,7 @@ package ds_test
 import (
 	"testing"
 
-	"github.com/changkun/gobase/ds"
+	"changkun.de/x/pkg/ds"
 )
 
 func newSkipList() *ds.SkipList {

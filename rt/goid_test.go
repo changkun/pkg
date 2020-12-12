@@ -13,7 +13,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/changkun/gobase/rt"
+	"changkun.de/x/pkg/rt"
 )
 
 func slowGetGoID() int64 {

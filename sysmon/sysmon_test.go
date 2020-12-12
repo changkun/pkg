@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/changkun/gobase/sysmon"
+	"changkun.de/x/pkg/sysmon"
 )
 
 func TestSysmon(t *testing.T) {

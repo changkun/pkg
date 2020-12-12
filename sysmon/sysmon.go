@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/changkun/gobase/rp"
+	"changkun.de/x/pkg/rp"
 )
 
 type sysmon struct {

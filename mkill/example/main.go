@@ -7,7 +7,7 @@ package main
 import (
 	"time"
 
-	"github.com/changkun/gobase/mkill"
+	"changkun.de/x/pkg/mkill"
 )
 
 func main() {

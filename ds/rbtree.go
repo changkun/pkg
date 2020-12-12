@@ -7,7 +7,7 @@ package ds
 import (
 	"fmt"
 
-	"github.com/changkun/gobase/common"
+	"changkun.de/x/pkg/common"
 )
 
 type color uint32

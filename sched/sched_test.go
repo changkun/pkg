@@ -14,8 +14,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/changkun/gobase/leaktest"
-	"github.com/changkun/gobase/sched/tests"
+	"changkun.de/x/pkg/leaktest"
+	"changkun.de/x/pkg/sched/tests"
 )
 
 const testLeak = false

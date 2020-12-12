@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/changkun/gobase/net"
+	"changkun.de/x/pkg/net"
 )
 
 // Bridge implements a hue light bridge

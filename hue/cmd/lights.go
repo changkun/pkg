@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/changkun/gobase/hue/lights"
+	"changkun.de/x/pkg/hue/lights"
 	"github.com/spf13/cobra"
 )
 

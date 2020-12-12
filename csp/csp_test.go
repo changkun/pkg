@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/changkun/gobase/csp"
+	"changkun.de/x/pkg/csp"
 )
 
 func TestS31_COPY(t *testing.T) {

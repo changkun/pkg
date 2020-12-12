@@ -7,7 +7,7 @@ package ds
 import (
 	"math/rand"
 
-	"github.com/changkun/gobase/common"
+	"changkun.de/x/pkg/common"
 )
 
 // A SkipList maintains an ordered collection of key:valkue pairs.

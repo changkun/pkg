@@ -11,7 +11,7 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/changkun/gobase/lockfree"
+	"changkun.de/x/pkg/lockfree"
 )
 
 // Errors

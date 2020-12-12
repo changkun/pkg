@@ -1,6 +1,10 @@
-# gobase
+# pkg
 
-Personal code base in Go
+A personal Go codebase. Use it at your own risk.
+
+```
+go get changkun.de/x/pkg
+```
 
 ## License
 

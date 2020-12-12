@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/changkun/gobase/algo"
+	"changkun.de/x/pkg/algo"
 )
 
 func TestSorts(t *testing.T) {

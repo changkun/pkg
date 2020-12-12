@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/changkun/gobase/ds"
+	"changkun.de/x/pkg/ds"
 )
 
 func TestRingBuffer(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/changkun/gobase/benchs/restrpc/route"
-	"github.com/changkun/gobase/benchs/restrpc/rpcs"
+	"changkun.de/x/pkg/benchs/restrpc/route"
+	"changkun.de/x/pkg/benchs/restrpc/rpcs"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
