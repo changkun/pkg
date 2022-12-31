@@ -17,6 +17,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/wcharczuk/go-chart v2.0.1+incompatible
+	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
 	golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
 	gonum.org/v1/gonum v0.0.0-20190929233944-b20cf7805fc4
