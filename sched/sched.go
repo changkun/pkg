@@ -33,8 +33,9 @@ type TaskFuture interface {
 	Get() interface{}
 }
 
-// Stop stops runtime scheduler gracefully.
-// Note that the call should only be called then application terminates
+// Stop stops the scheduler gracefully and abandons whatever is still
+// scheduled. It returns once no task is executing and nothing is left to fire,
+// so the scheduler is idle and can be reused from a known state.
 func Stop() {
 	Pause()
 
@@ -43,6 +44,15 @@ func Stop() {
 	for atomic.LoadUint64(&sched0.running) > 0 {
 		runtime.Gosched()
 	}
+
+	// Cancel the goroutine waiting on the timer and drop everything still
+	// queued. Without this the scheduler kept its pending tasks and its timer,
+	// so a task submitted before Stop still fired afterwards, against a
+	// caller that believed the scheduler had stopped.
+	if cancel, ok := sched0.cancel.Load().(context.CancelFunc); ok {
+		cancel()
+	}
+	sched0.tasks.clear()
 
 	// reset pausing indicator
 	atomic.AddUint64(&sched0.pausing, ^uint64(0))
@@ -270,6 +280,16 @@ func (m *taskQueue) length() (l int) {
 	l = m.heap.Len()
 	m.mu.Unlock()
 	return
+}
+
+// clear drops every queued task. The futures of the dropped tasks are never
+// completed, which is what abandoning them means: Stop is the end of the
+// scheduler's life, not a checkpoint.
+func (m *taskQueue) clear() {
+	m.mu.Lock()
+	m.heap = &taskHeap{}
+	m.lookup = map[string]*task{}
+	m.mu.Unlock()
 }
 
 // push item

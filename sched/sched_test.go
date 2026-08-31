@@ -20,6 +20,22 @@ import (
 
 const testLeak = false
 
+// Deadlines in the ordering tests are absolute, computed from a start taken
+// at the top of the test, and the goroutines that submit them race those
+// deadlines. Margins of tens of milliseconds made the outcome depend on how
+// quickly the runtime got round to starting a goroutine, which on a loaded CI
+// machine is not fast enough. These are large enough that the order under
+// test is decided by the scheduler and not by that latency.
+const (
+	// soon is when a plainly scheduled task is due.
+	soon = 600 * time.Millisecond
+	// later is far enough out that a task scheduled for it only runs if
+	// something triggers it early.
+	later = 3 * time.Second
+	// veryImminent is the deadline of a replica meant to run before soon.
+	veryImminent = 200 * time.Millisecond
+)
+
 func TestSchedMasiveSchedule(t *testing.T) {
 	if testLeak {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -106,10 +122,10 @@ func TestSchedSchedule1(t *testing.T) {
 	start := time.Now().UTC()
 	defer Stop()
 
-	task1 := tests.NewTask("task-1", start.Add(time.Millisecond*100))
+	task1 := tests.NewTask("task-1", start.Add(later))
 	Submit(task1)
-	task2 := tests.NewTask("task-2", start.Add(time.Millisecond*30))
-	taskAreplica := tests.NewTask("task-1", start.Add(time.Millisecond*10))
+	task2 := tests.NewTask("task-2", start.Add(soon))
+	taskAreplica := tests.NewTask("task-1", start.Add(veryImminent))
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -141,9 +157,9 @@ func TestSchedSchedule2(t *testing.T) {
 	start := time.Now().UTC()
 	defer Stop()
 
-	task1 := tests.NewTask("task-1", start.Add(time.Millisecond*100))
+	task1 := tests.NewTask("task-1", start.Add(later))
 	Submit(task1)
-	task2 := tests.NewTask("task-2", start.Add(time.Millisecond*30))
+	task2 := tests.NewTask("task-2", start.Add(soon))
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -385,4 +401,44 @@ func (t *tt) SetExecution(current time.Time) (old time.Time) {
 func (t *tt) Execute() (result interface{}, retry bool, fail error) {
 	result = 1 // avoid allocation
 	return
+}
+
+// TestStopAbandonsPendingTasks pins the contract Stop documents. Stop used to
+// pause the timer, wait for running tasks and then undo its own pause, leaving
+// the queue and the timer goroutine intact. A task submitted before Stop still
+// fired afterwards, which in this package's own tests meant one test's
+// leftovers executing during the next one and corrupting its recorded order.
+func TestStopAbandonsPendingTasks(t *testing.T) {
+	tests.O.Clear()
+
+	// Due soon enough that a scheduler which ignored Stop would fire it well
+	// within the wait below.
+	Submit(tests.NewTask("abandoned", time.Now().UTC().Add(veryImminent)))
+	Stop()
+
+	if n := sched0.tasks.length(); n != 0 {
+		t.Errorf("queue holds %d tasks after Stop, want 0", n)
+	}
+
+	time.Sleep(veryImminent * 4)
+	if got := tests.O.Get(); len(got) != 0 {
+		t.Errorf("tasks executed after Stop: %v", got)
+	}
+}
+
+// TestStopLeavesSchedulerUsable checks that abandoning the queue does not
+// wedge the scheduler: a task submitted after Stop still runs.
+func TestStopLeavesSchedulerUsable(t *testing.T) {
+	tests.O.Clear()
+	Submit(tests.NewTask("before", time.Now().UTC().Add(later)))
+	Stop()
+
+	defer Stop()
+	future := Submit(tests.NewTask("after", time.Now().UTC()))
+	future.Get()
+
+	want := []string{"after"}
+	if got := tests.O.Get(); !reflect.DeepEqual(got, want) {
+		t.Errorf("execution order = %v, want %v", got, want)
+	}
 }
