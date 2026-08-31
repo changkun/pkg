@@ -21,29 +21,38 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+// run holds the body so that the deferred close happens; os.Exit, which
+// log.Fatalf calls, skips deferred functions.
+func run() int {
 	ctx := context.Background()
 
 	client, err := speech.NewClient(ctx)
 	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+		log.Printf("failed to create client: %v", err)
+		return 1
 	}
+	defer client.Close()
 
 	gsf := "gs://changkun.de/test2.mp3"
 
 	f, err := os.Create("out.txt")
 	if err != nil {
-		log.Fatalf("failed to create output file: %v", err)
+		log.Printf("failed to create output file: %v", err)
+		return 1
 	}
 	defer f.Close()
 
-	err = send(f, client, gsf)
-	if err != nil {
-		log.Fatalf("failed to send file to googld: %v", err)
+	if err := send(ctx, f, client, gsf); err != nil {
+		log.Printf("failed to send the file to google: %v", err)
+		return 1
 	}
+	return 0
 }
 
-func send(w io.Writer, client *speech.Client, gsf string) error {
-	ctx := context.Background()
+func send(ctx context.Context, w io.Writer, client *speech.Client, gsf string) error {
 	req := &speechpb.LongRunningRecognizeRequest{
 		Config: &speechpb.RecognitionConfig{
 			Encoding:        speechpb.RecognitionConfig_MP3,

@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
@@ -32,10 +33,6 @@ const (
 	defaultRetryTimes = 3
 	defaultUA         = "changkun/autran"
 	defaultDomain     = "https://raasr.xfyun.cn/api"
-)
-
-var (
-	ch string = "aaaaaaaaa`"
 )
 
 // Conf config struct
@@ -68,6 +65,10 @@ type Conn struct {
 // Client ...
 type Client struct {
 	conn *Conn
+	// sliceID is the odometer behind getNextSliceID. It used to be a package
+	// level variable, so two clients uploading at once shared one counter and
+	// handed the service overlapping slice identifiers.
+	sliceID []byte
 }
 
 // RespInfo ...
@@ -87,32 +88,34 @@ func New(appID, secretKey string) *Client {
 
 	conn := Conn{&http.Client{}, conf}
 	client.conn = &conn
+	// One before "aaaaaaaaaa", so the first identifier handed out is that.
+	client.sliceID = []byte("aaaaaaaaa`")
 
 	return &client
 }
 
 // UploadAudio ...
-func (c *Client) UploadAudio(filename, language string) (taskid string, err error) {
+func (c *Client) UploadAudio(ctx context.Context, filename, language string) (taskid string, err error) {
 	filesize, sliceNum, err := c.conn.getSizeAndSiceNum(filename)
 	if err != nil {
 		return
 	}
 	log.Printf("filesize: %v, sliceNum: %v", filesize, sliceNum)
 
-	taskid, err = c.initSliceUpload(filename, language, filesize, sliceNum)
+	taskid, err = c.initSliceUpload(ctx, filename, language, filesize, sliceNum)
 	if err != nil {
 		return
 	}
 
 	log.Printf("taskid: %v", taskid)
 
-	if err = c.performSliceUpload(filename, taskid, filesize, sliceNum); err != nil {
+	if err = c.performSliceUpload(ctx, filename, taskid, filesize, sliceNum); err != nil {
 		return
 	}
 
 	log.Println("upload is complete.")
 
-	if err = c.completeSliceUpload(taskid); err != nil {
+	if err = c.completeSliceUpload(ctx, taskid); err != nil {
 		return
 	}
 
@@ -120,7 +123,7 @@ func (c *Client) UploadAudio(filename, language string) (taskid string, err erro
 	return
 }
 
-func (c *Client) initSliceUpload(filename, language string, filesize, sliceNum int64) (taskid string, err error) {
+func (c *Client) initSliceUpload(ctx context.Context, filename, language string, filesize, sliceNum int64) (taskid string, err error) {
 	var info RespInfo
 	params := c.getBaseAuthParam("")
 	params.Add("file_len", strconv.FormatInt(filesize, 10))
@@ -133,12 +136,12 @@ func (c *Client) initSliceUpload(filename, language string, filesize, sliceNum i
 	params.Add("language", language)
 	params.Add("pd", "tech")
 
-	resp, err := c.conn.httpDo(c.conn.conf.Domain+"/prepare", nil, params, nil)
+	resp, err := c.conn.httpDo(ctx, c.conn.conf.Domain+"/prepare", nil, params, nil)
 	if err != nil {
 		return
 	}
 
-	if err = json.Unmarshal([]byte(resp), &info); err != nil {
+	if err = json.Unmarshal(resp, &info); err != nil {
 		return
 	}
 
@@ -150,32 +153,37 @@ func (c *Client) initSliceUpload(filename, language string, filesize, sliceNum i
 
 	return
 }
-func (c *Client) performSliceUpload(filename, taskid string, filesize, sliceNum int64) (err error) {
+func (c *Client) performSliceUpload(ctx context.Context, filename, taskid string, filesize, sliceNum int64) (err error) {
 	log.Println("start uploading...")
 	var info RespInfo
-	fi, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+	fi, err := os.Open(filename)
 	if err != nil {
-		return
+		return err
 	}
 	defer fi.Close()
 
 	b := make([]byte, c.conn.conf.PartSize)
 	for i := int64(1); i <= sliceNum; i++ {
 		log.Printf("uploading slice %d...", i)
-		fi.Seek((i-1)*c.conn.conf.PartSize, 0)
-		if len(b) > int(filesize-(i-1)*c.conn.conf.PartSize) {
-			b = make([]byte, filesize-(i-1)*c.conn.conf.PartSize)
+		offset := (i - 1) * c.conn.conf.PartSize
+		if remaining := filesize - offset; len(b) > int(remaining) {
+			b = make([]byte, remaining)
 		}
-		fi.Read(b)
+		// ReadAt reads the slice in full or reports why it could not. A short
+		// read used to go unnoticed and upload whatever the buffer still held
+		// from the previous slice.
+		if _, err := fi.ReadAt(b, offset); err != nil {
+			return fmt.Errorf("cannot read slice %d at offset %d: %w", i, offset, err)
+		}
 
 		params := c.getBaseAuthParam(taskid)
 		params.Add("slice_id", c.getNextSliceID())
-		resp, err := c.conn.postMulti(c.conn.conf.Domain+"/upload", filename, b, params)
+		resp, err := c.conn.postMulti(ctx, c.conn.conf.Domain+"/upload", filename, b, params)
 		if err != nil {
 			return err
 		}
 
-		if err := json.Unmarshal([]byte(resp), &info); err != nil {
+		if err := json.Unmarshal(resp, &info); err != nil {
 			return err
 		}
 
@@ -186,16 +194,16 @@ func (c *Client) performSliceUpload(filename, taskid string, filesize, sliceNum 
 	return nil
 }
 
-func (c *Client) completeSliceUpload(taskid string) (err error) {
+func (c *Client) completeSliceUpload(ctx context.Context, taskid string) (err error) {
 	log.Println("perform merge action...")
 
 	params := c.getBaseAuthParam(taskid)
-	resp, err := c.conn.httpDo(c.conn.conf.Domain+"/merge", nil, params, nil)
+	resp, err := c.conn.httpDo(ctx, c.conn.conf.Domain+"/merge", nil, params, nil)
 	if err != nil {
 		return
 	}
 	var info RespInfo
-	if err = json.Unmarshal([]byte(resp), &info); err != nil {
+	if err = json.Unmarshal(resp, &info); err != nil {
 		return
 	}
 
@@ -206,34 +214,15 @@ func (c *Client) completeSliceUpload(taskid string) (err error) {
 	return nil
 }
 
-func (c *Client) doWorker(filename, taskid string, b []byte) (err error) {
-	params := c.getBaseAuthParam(taskid)
-	params.Add("slice_id", c.getNextSliceID())
-	resp, err := c.conn.postMulti(c.conn.conf.Domain+"/upload", filename, b, params)
-	if err != nil {
-		return err
-	}
-	var info RespInfo
-	if err := json.Unmarshal([]byte(resp), &info); err != nil {
-		return err
-	}
-
-	if info.Ok != 0 {
-		return fmt.Errorf("info: %v, errno: %v", info.Failed, info.ErrNo)
-	}
-
-	return
-}
-
 // GetProgress ...
-func (c *Client) GetProgress(taskid string) (status int, err error) {
+func (c *Client) GetProgress(ctx context.Context, taskid string) (status int, err error) {
 	params := c.getBaseAuthParam(taskid)
-	resp, err := c.conn.httpDo(c.conn.conf.Domain+"/getProgress", nil, params, nil)
+	resp, err := c.conn.httpDo(ctx, c.conn.conf.Domain+"/getProgress", nil, params, nil)
 	if err != nil {
 		return
 	}
 	var info RespInfo
-	if err = json.Unmarshal([]byte(resp), &info); err != nil {
+	if err = json.Unmarshal(resp, &info); err != nil {
 		return
 	}
 
@@ -256,14 +245,14 @@ func (c *Client) GetProgress(taskid string) (status int, err error) {
 }
 
 // GetResult ...
-func (c *Client) GetResult(taskid string) (content string, err error) {
+func (c *Client) GetResult(ctx context.Context, taskid string) (content string, err error) {
 	params := c.getBaseAuthParam(taskid)
-	resp, err := c.conn.httpDo(c.conn.conf.Domain+"/getResult", nil, params, nil)
+	resp, err := c.conn.httpDo(ctx, c.conn.conf.Domain+"/getResult", nil, params, nil)
 	if err != nil {
 		return
 	}
 	var info RespInfo
-	if err = json.Unmarshal([]byte(resp), &info); err != nil {
+	if err = json.Unmarshal(resp, &info); err != nil {
 		return
 	}
 
@@ -274,46 +263,52 @@ func (c *Client) GetResult(taskid string) (content string, err error) {
 	return info.Data, nil
 }
 
-func (c *Conn) postMulti(uri, filename string, content []byte, params url.Values) ([]byte, error) {
+func (c *Conn) postMulti(ctx context.Context, uri, filename string, content []byte, params url.Values) ([]byte, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	part, err := writer.CreateFormFile("content", filename+params.Get("slice_id"))
-	if err != nil {
-		return nil, err
+	part, ferr := writer.CreateFormFile("content", filename+params.Get("slice_id"))
+	if ferr != nil {
+		return nil, ferr
 	}
-	_, err = io.Copy(part, bytes.NewBuffer(content))
+	if _, err := io.Copy(part, bytes.NewReader(content)); err != nil {
+		return nil, fmt.Errorf("cannot write the slice into the form: %w", err)
+	}
 
 	for key, val := range params {
-		_ = writer.WriteField(key, val[0])
+		if err := writer.WriteField(key, val[0]); err != nil {
+			return nil, fmt.Errorf("cannot write field %s: %w", key, err)
+		}
 	}
-	err = writer.Close()
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, uri, body)
 	if err != nil {
 		return nil, err
 	}
-	request, err := http.NewRequest(http.MethodPost, uri, body)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
 	res, err := c.c.Do(request)
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	return io.ReadAll(res.Body)
 }
 
-func (c *Conn) httpDo(url string, body []byte, params url.Values, headers map[string]string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
+func (c *Conn) httpDo(ctx context.Context, url string, body []byte, params url.Values, headers map[string]string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 	if params != nil {
 		req.URL.RawQuery = params.Encode()
 	}
-	if headers != nil {
-		for key, val := range headers {
-			req.Header.Add(key, val)
-		}
+	for key, val := range headers {
+		req.Header.Add(key, val)
 	}
 	resp, err := c.c.Do(req)
 	if err != nil {
@@ -353,19 +348,18 @@ func (c *Client) getBaseAuthParam(taskid string) url.Values {
 	return params
 }
 
+// getNextSliceID returns the identifier of the next slice. The service
+// numbers slices with a lowercase base 26 odometer, so the sequence runs
+// aaaaaaaaaa, aaaaaaaaab and carries leftwards when a position passes z.
 func (c *Client) getNextSliceID() string {
-	j := len(ch) - 1
-	for i := j; i >= 0; {
-		cj := string(ch[i])
-		if cj != "z" {
-			ch = string(ch[:i]) + string(ch[i]+1) + string(ch[i+1:])
+	for i := len(c.sliceID) - 1; i >= 0; i-- {
+		if c.sliceID[i] != 'z' {
+			c.sliceID[i]++
 			break
-		} else {
-			ch = string(ch[:i]) + "a" + string(ch[i+1:])
-			i--
 		}
+		c.sliceID[i] = 'a'
 	}
-	return ch
+	return string(c.sliceID)
 }
 
 func fileSize(filename string) (int64, error) {
