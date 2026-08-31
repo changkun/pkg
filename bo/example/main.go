@@ -11,7 +11,6 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"time"
 
 	"changkun.de/x/pkg/bo"
 	"github.com/aybabtme/rgbterm"
@@ -114,8 +113,11 @@ func guess() {
 }
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	// predict()
+	// The global source has seeded itself since go 1.20, so rand.Seed here was
+	// both deprecated and unnecessary.
+	if len(os.Args) > 1 && os.Args[1] == "predict" {
+		predict()
+		return
+	}
 	guess()
 }

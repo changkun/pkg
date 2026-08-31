@@ -22,13 +22,13 @@ func NewMinStack() MinStack {
 
 // Push ...
 func (ms *MinStack) Push(x int) {
-	if ms.store.Front() != nil && ms.store.Front().Value.(*node).min > x {
-		ms.store.PushFront(&node{value: x, min: x})
-	} else if ms.store.Front() != nil && ms.store.Front().Value.(*node).min <= x {
-		ms.store.PushFront(&node{value: x, min: ms.store.Front().Value.(*node).min})
-	} else {
-		ms.store.PushFront(&node{value: x, min: x})
+	// The new minimum is the smaller of x and the minimum carried by the item
+	// below it. An empty stack has no item below, so the minimum is x.
+	min := x
+	if front := ms.store.Front(); front != nil && front.Value.(*node).min <= x {
+		min = front.Value.(*node).min
 	}
+	ms.store.PushFront(&node{value: x, min: min})
 }
 
 // Pop ...

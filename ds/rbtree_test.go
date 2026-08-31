@@ -41,11 +41,8 @@ func check(arr []int) {
 }
 
 func TestRBTreeWithEqual(t *testing.T) {
-	tree := ds.NewRBTree(func(a, b interface{}) bool {
-		if a.(int) < b.(int) {
-			return true
-		}
-		return false
+	tree := ds.NewRBTree(func(a, b any) bool {
+		return a.(int) < b.(int)
 	})
 	if tree.Len() != 0 {
 		t.Fatalf("want 0, got %d", tree.Len())
@@ -92,11 +89,8 @@ func TestRBTreeNoEqual(t *testing.T) {
 	N := 1000
 	for i := 0; i < N; i++ {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			tree := ds.NewRBTree(func(a, b interface{}) bool {
-				if a.(int) < b.(int) {
-					return true
-				}
-				return false
+			tree := ds.NewRBTree(func(a, b any) bool {
+				return a.(int) < b.(int)
 			})
 
 			// generate unique numbers
@@ -152,11 +146,8 @@ func BenchmarkRBTree_Put(b *testing.B) {
 		}
 		b.Run(fmt.Sprintf("size-%d", size), func(b *testing.B) {
 			// prepare problem size
-			tree := ds.NewRBTree(func(a, b interface{}) bool {
-				if a.(int) < b.(int) {
-					return true
-				}
-				return false
+			tree := ds.NewRBTree(func(a, b any) bool {
+				return a.(int) < b.(int)
 			})
 			for n := 0; n < size-1; n++ {
 				tree.Put(n, n)

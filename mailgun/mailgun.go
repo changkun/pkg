@@ -18,12 +18,9 @@ func SendEmail(ctx context.Context, domain, apikey, endpoint string,
 	mg.SetAPIBase(endpoint)
 
 	// The message object allows you to add attachments and Bcc recipients
-	message := mg.NewMessage(sender, subject, body, recipient)
+	message := mailgun.NewMessage(sender, subject, body, recipient)
 
 	// Send the message with a 10 second timeout
 	_, _, err := mg.Send(ctx, message)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
