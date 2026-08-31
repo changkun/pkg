@@ -65,9 +65,6 @@ func (v *vec) sub0(vv *vec) *vec {
 func (v *vec) sub(vv *vec) *vec {
 	return &vec{v.x - vv.x, v.y - vv.y, v.z - vv.z}
 }
-func (v *vec) neg() *vec {
-	return &vec{-v.x, -v.y, -v.z}
-}
 func (v *vec) mult0(vv float64) *vec {
 	v.x *= vv
 	v.y *= vv

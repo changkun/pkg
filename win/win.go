@@ -1,3 +1,8 @@
+// Copyright 2022 Changkun Ou. All rights reserved.
+// Use of this source code is governed by a MIT
+// license that can be found in the LICENSE file.
+
+// Command win opens a shiny window and prints every event it receives.
 package main
 
 import (
@@ -16,10 +21,7 @@ func main() {
 		defer w.Release()
 
 		for {
-			switch e := w.NextEvent().(type) {
-			default:
-				fmt.Println(e)
-			}
+			fmt.Println(w.NextEvent())
 		}
 	})
 }

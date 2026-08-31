@@ -42,18 +42,19 @@ func setWorld() *hitableList {
 			chooseMat := rand.Float64()
 			center := newVec(float64(a)+0.9*rand.Float64(), 0.2,
 				float64(b)+0.9*rand.Float64())
-			if center.sub(newVec(4, 0.2, 0)).len() > 0.9 { // diffuse
+			switch {
+			case center.sub(newVec(4, 0.2, 0)).len() > 0.9: // diffuse
 				world.add(newSphere(center, 0.2,
 					newLambertian(newVec(rand.Float64()*rand.Float64(),
 						rand.Float64()*rand.Float64(),
 						rand.Float64()*rand.Float64()))))
-			} else if chooseMat < 0.95 { // metal
+			case chooseMat < 0.95: // metal
 				world.add(newSphere(center, 0.2, newMetal(
 					newVec(0.5*(1+rand.Float64()),
 						0.5*(1+rand.Float64()),
 						0.5*(1+rand.Float64())),
 					0.5*rand.Float64())))
-			} else { // glass
+			default: // glass
 				world.add(newSphere(center, 0.2, newDielectric(1.5)))
 			}
 		}

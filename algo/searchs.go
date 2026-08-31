@@ -13,11 +13,12 @@ func BinarySearch(arr []interface{}, x interface{}, less common.Less) int {
 	l, r := 0, len(arr)-1
 	for l <= r {
 		mid := (l + r) / 2
-		if less(arr[mid], x) {
+		switch {
+		case less(arr[mid], x):
 			l = mid + 1
-		} else if less(x, arr[mid]) {
+		case less(x, arr[mid]):
 			r = mid - 1
-		} else {
+		default:
 			return mid
 		}
 	}

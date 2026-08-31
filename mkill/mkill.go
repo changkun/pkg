@@ -5,6 +5,7 @@
 package mkill
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,11 +16,15 @@ import (
 	"time"
 )
 
+// threadCountTimeout bounds the shell out that counts threads. It is well
+// under interval, so a slow count cannot pile up behind the next tick.
+const threadCountTimeout = 500 * time.Millisecond
+
 var (
-	pid              = os.Getpid()
-	maxThread        = int32(runtime.NumCPU())
-	interval         = time.Second
-	debug     uint32 = 0
+	pid       = os.Getpid()
+	maxThread = int32(runtime.NumCPU())
+	interval  = time.Second
+	debug     uint32
 )
 
 func checkwork() {
@@ -37,25 +42,28 @@ func init() {
 	}
 	go func() {
 		t := time.NewTicker(interval)
-		for {
-			select {
-			case <-t.C:
-				n, _ := getThreads()
-				nkill := int32(n) - atomic.LoadInt32(&maxThread)
-				if nkill <= 0 {
-					if atomic.LoadUint32(&debug) == 1 {
-						fmt.Printf("mkill: checked #threads total %v / max %v\n", n, maxThread)
-					}
-					continue
-				}
-				for i := int32(0); i < nkill; i++ {
-					go func() {
-						runtime.LockOSThread()
-					}()
-				}
+		for range t.C {
+			n, err := getThreads()
+			if err != nil {
 				if atomic.LoadUint32(&debug) == 1 {
-					fmt.Printf("mkill: killing #threads, remaining: %v\n", n)
+					fmt.Printf("mkill: %v\n", err)
 				}
+				continue
+			}
+			nkill := int32(n) - atomic.LoadInt32(&maxThread)
+			if nkill <= 0 {
+				if atomic.LoadUint32(&debug) == 1 {
+					fmt.Printf("mkill: checked #threads total %v / max %v\n", n, maxThread)
+				}
+				continue
+			}
+			for i := int32(0); i < nkill; i++ {
+				go func() {
+					runtime.LockOSThread()
+				}()
+			}
+			if atomic.LoadUint32(&debug) == 1 {
+				fmt.Printf("mkill: killing #threads, remaining: %v\n", n)
 			}
 		}
 	}()
@@ -76,10 +84,13 @@ func SetDebug(flag bool) {
 	}
 }
 
-// getThreads returns the number of running threads
-// Linux:
+// getThreads returns the number of running threads. The shell out is bounded
+// so a wedged command cannot stall the monitor goroutine forever.
 func getThreads() (int, error) {
-	out, err := exec.Command("bash", "-c", cmdThreads).Output()
+	ctx, cancel := context.WithTimeout(context.Background(), threadCountTimeout)
+	defer cancel()
+
+	out, err := exec.CommandContext(ctx, "bash", "-c", cmdThreads).Output()
 	if err != nil {
 		return 0, fmt.Errorf("mkill: failed to fetch #threads: %w", err)
 	}

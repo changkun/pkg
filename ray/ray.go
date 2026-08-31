@@ -29,18 +29,6 @@ func (r *ray) pointAt(t float64) (x, y, z float64) {
 	return
 }
 
-func (r *ray) hintSphere(center *vec, radius float64) float64 {
-	oc := r.orig.sub(center)
-	a := r.dir.dot(&r.dir)
-	b := 2.0 * oc.dot(&r.dir)
-	c := oc.dot(oc) - radius*radius
-	d := b*b - 4*a*c
-	if d < 0 {
-		return -1
-	}
-	return (-b - math.Sqrt(d)) / (2.0 * a)
-}
-
 func (r *ray) color(world *hitableList, depth int) *vec {
 	t := 0.5 * (r.dir.y*(1.0/r.dir.len()) + 1.0)
 	attenuation := newVec(1-0.5*t, 1-0.3*t, 1)

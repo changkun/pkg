@@ -158,7 +158,7 @@ func TestS34_ASSEMBLE(t *testing.T) {
 
 		received := []string{}
 		for c := range lineprinter {
-			received = append(received, string(c))
+			received = append(received, c)
 		}
 		if !reflect.DeepEqual(tt.want, received) {
 			t.Fatalf("%v: expected: %v, got: %v", t.Name(), ttt.want, received)
@@ -196,7 +196,7 @@ func TestS36_Reformat(t *testing.T) {
 
 		received := []string{}
 		for c := range lineprinter {
-			received = append(received, string(c))
+			received = append(received, c)
 		}
 		if !reflect.DeepEqual(tt.want, received) {
 			t.Fatalf("%v: expected: %v, got: %v", t.Name(), ttt.want, received)
@@ -232,7 +232,7 @@ func TestS36_ConwayProblem(t *testing.T) {
 
 		received := []string{}
 		for c := range lineprinter {
-			received = append(received, string(c))
+			received = append(received, c)
 		}
 		if !reflect.DeepEqual(tt.want, received) {
 			t.Fatalf("%v: expected: %v, got: %v", t.Name(), ttt.want, received)

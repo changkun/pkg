@@ -202,7 +202,7 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 		if len(tmp) > 80 {
 			cardimage = append(cardimage, tmp[:80]...)
 		} else {
-			cardimage = append(cardimage, tmp[:]...)
+			cardimage = append(cardimage, tmp...)
 		}
 		for i := 0; i < len(cardimage); i++ {
 			X <- cardimage[i]
@@ -264,7 +264,6 @@ func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 	}
 
 	close(lineprinter)
-	return
 }
 
 // S35_Reformat implements Section 3.5 Reformat problem:
@@ -419,7 +418,6 @@ func (s *S43_SmallSetOfIntegers) Has(n int, has chan bool) {
 		return
 	}
 	has <- false
-	return
 }
 
 // Insert inserts given n, done receives true if n is inserted.
@@ -440,7 +438,6 @@ func (s *S43_SmallSetOfIntegers) Insert(n int, done chan bool) {
 	}
 
 	done <- false
-	return
 }
 
 // S44_Scan implements Section 4.4 Scanning a Set
@@ -548,12 +545,11 @@ func S45_S46_NewRecursiveSmallSetOfIntegers() (chan S45_Has, chan int, chan chan
 						}
 					}
 				case in := <-insert[i]:
-					if in < n {
+					switch {
+					case in < n:
 						insert[i+1] <- in
 						n = in
-					} else if in == n {
-						continue
-					} else if in > n {
+					case in > n:
 						insert[i+1] <- in
 					}
 				case least[i] <- S46_Least{n, false}:

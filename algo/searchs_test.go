@@ -13,41 +13,32 @@ import (
 
 func TestBinarySearch(t *testing.T) {
 	tests := []struct {
-		input []interface{}
-		x     interface{}
+		input []any
+		x     any
 		less  common.Less
 		want  int
 	}{
 		{
-			input: []interface{}{1, 2, 3, 4, 5, 6, 7},
+			input: []any{1, 2, 3, 4, 5, 6, 7},
 			x:     6,
-			less: func(a, b interface{}) bool {
-				if a.(int) < b.(int) {
-					return true
-				}
-				return false
+			less: func(a, b any) bool {
+				return a.(int) < b.(int)
 			},
 			want: 5,
 		},
 		{
-			input: []interface{}{1, 2, 3, 4, 5, 6, 7},
+			input: []any{1, 2, 3, 4, 5, 6, 7},
 			x:     2,
-			less: func(a, b interface{}) bool {
-				if a.(int) < b.(int) {
-					return true
-				}
-				return false
+			less: func(a, b any) bool {
+				return a.(int) < b.(int)
 			},
 			want: 1,
 		},
 		{
-			input: []interface{}{},
+			input: []any{},
 			x:     2,
-			less: func(a, b interface{}) bool {
-				if a.(int) < b.(int) {
-					return true
-				}
-				return false
+			less: func(a, b any) bool {
+				return a.(int) < b.(int)
 			},
 			want: -1,
 		},
