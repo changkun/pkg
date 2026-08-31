@@ -2,14 +2,17 @@ syntax = "proto3";
 
 package rpcs;
 
+option go_package = "changkun.de/x/pkg/benchs/restrpc/rpcs";
+
 service Arithmetic {
-    rpc Add(AddInput) returns (AddOutput) {}
+  rpc Add(AddInput) returns (AddOutput) {}
 }
 
 message AddInput {
-    float A = 1;
-    float B = 2;
+  float A = 1;
+  float B = 2;
 }
+
 message AddOutput {
-    float Sum = 1;
+  float Sum = 1;
 }

@@ -1,122 +1,167 @@
+// Copyright 2020 Changkun Ou. All rights reserved.
+// Use of this source code is governed by a MIT
+// license that can be found in the LICENSE file.
+
 package main_test
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"changkun.de/x/pkg/benchs/restrpc/rpcs"
 	"changkun.de/x/pkg/benchs/restrpc/ser"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-func bootServer(success chan bool) {
+const (
+	httpAddr    = "http://0.0.0.0:12345"
+	grpcAddr    = "0.0.0.0:12346"
+	bootTimeout = 10 * time.Second
+	bootRetry   = 50 * time.Millisecond
+)
+
+// bootServer starts both servers and polls the REST health endpoint until it
+// answers. The endpoint is not up the instant Listen returns, so a single
+// probe races the server and the poll has to retry rather than give up on the
+// first refused connection.
+func bootServer() error {
 	go func() {
-		defer func() {
-			if m := recover(); m != nil {
-				success <- false
-			}
-		}()
-		go ser.RunRPC()
-		ser.RunHTTP()
+		if err := ser.RunRPC(); err != nil {
+			log.Printf("grpc server: %v", err)
+		}
+	}()
+	go func() {
+		if err := ser.RunHTTP(); err != nil {
+			log.Printf("http server: %v", err)
+		}
 	}()
 
-	timeout := time.Second * 10
-	start := time.Now()
-
-	for {
-		if time.Now().Sub(start) > timeout {
-			logrus.Println("timeout")
-			success <- false
-			break
+	deadline := time.Now().Add(bootTimeout)
+	var last error
+	for time.Now().Before(deadline) {
+		if last = ping(); last == nil {
+			return nil
 		}
-
-		res, err := http.Get("http://localhost:12345/api/v1/ping")
-		if err != nil {
-			logrus.Printf("1 err: %v", err)
-			success <- false
-			break
-		}
-		defer res.Body.Close()
-
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			logrus.Printf("2 err: %v", err)
-			success <- false
-			break
-		}
-
-		var m map[string]string
-		if err := json.Unmarshal(body, &m); err != nil {
-			logrus.Printf("3 err: %v", err)
-			success <- false
-			break
-		}
-
-		msg, ok := m["msg"]
-		if msg != "pong" || !ok {
-			logrus.Println("msg is not ok")
-			success <- false
-			break
-		}
-
-		success <- true
-		break
+		time.Sleep(bootRetry)
 	}
+	return fmt.Errorf("server not ready after %v: %w", bootTimeout, last)
 }
 
-func init() {
-	bootcheck := make(chan bool, 1)
-	go bootServer(bootcheck)
-	if success := <-bootcheck; success == false {
-		logrus.Fatal("fail to boot the service")
+// ping reports whether the REST health endpoint answers correctly.
+func ping() error {
+	res, err := http.Get(httpAddr + "/api/v1/ping")
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	var m map[string]string
+	if err := json.Unmarshal(body, &m); err != nil {
+		return fmt.Errorf("decode %q: %w", body, err)
+	}
+	if m["msg"] != "pong" {
+		return fmt.Errorf("ping answered %q, want pong", m["msg"])
+	}
+	return nil
+}
+
+func TestMain(m *testing.M) {
+	if err := bootServer(); err != nil {
+		log.Fatalf("fail to boot the service: %v", err)
+	}
+	os.Exit(m.Run())
+}
+
+// addREST posts an addition and returns the sum the server reports.
+func addREST(a, b float64) (float64, error) {
+	requestBody, err := json.Marshal(map[string]float64{"a": a, "b": b})
+	if err != nil {
+		return 0, err
+	}
+	req, err := http.NewRequest(http.MethodPost, httpAddr+"/api/v1/add", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var out map[string]float64
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return 0, err
+	}
+	return out["sum"], nil
+}
+
+// dialGRPC opens a client connection to the gRPC endpoint.
+func dialGRPC(tb testing.TB) rpcs.ArithmeticClient {
+	tb.Helper()
+	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		tb.Fatalf("did not connect: %v", err)
+	}
+	tb.Cleanup(func() { conn.Close() })
+	return rpcs.NewArithmeticClient(conn)
+}
+
+// TestBothTransportsAgree guards the benchmarks: a transport that answers
+// wrongly, or not at all, would otherwise still produce a respectable number.
+func TestBothTransportsAgree(t *testing.T) {
+	const a, b = 42.0, 99.5
+	const want = a + b
+
+	got, err := addREST(a, b)
+	if err != nil {
+		t.Fatalf("REST add: %v", err)
+	}
+	if got != want {
+		t.Errorf("REST sum = %v, want %v", got, want)
+	}
+
+	out, err := dialGRPC(t).Add(t.Context(), &rpcs.AddInput{A: a, B: b})
+	if err != nil {
+		t.Fatalf("gRPC add: %v", err)
+	}
+	if float64(out.GetSum()) != want {
+		t.Errorf("gRPC sum = %v, want %v", out.GetSum(), want)
 	}
 }
 
 func BenchmarkAPIRestful(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		requestBody, err := json.Marshal(map[string]float64{
-			"a": 42.0,
-			"b": 99.9,
-		})
-		if err != nil {
-			b.Fatal("prepare body fail")
+	for b.Loop() {
+		if _, err := addREST(42.0, 99.9); err != nil {
+			b.Fatalf("REST add: %v", err)
 		}
-		body := bytes.NewBuffer(requestBody)
-		req, err := http.NewRequest("POST", "http://0.0.0.0:12345/api/v1/add", body)
-		if err != nil {
-			panic(err)
-		}
-		req.Header.Set("Content-Type", "application/json")
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			panic(err)
-		}
-		defer resp.Body.Close()
 	}
 }
 
 func BenchmarkAPIgRPC(b *testing.B) {
-	conn, err := grpc.Dial("0.0.0.0:12346", grpc.WithInsecure())
-	if err != nil {
-		logrus.Fatalf("did not connect: \n\t%v", err)
-	}
-	defer conn.Close()
-	client := rpcs.NewArithmeticClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+	client := dialGRPC(b)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		client.Add(ctx, &rpcs.AddInput{
-			A: 42.0,
-			B: 99.9,
-		})
+	for b.Loop() {
+		if _, err := client.Add(ctx, &rpcs.AddInput{A: 42.0, B: 99.9}); err != nil {
+			b.Fatalf("gRPC add: %v", err)
+		}
 	}
 }
