@@ -13,23 +13,32 @@ import (
 
 func TestGLS(t *testing.T) {
 	gls.Store("hello", "world")
+
+	// The point of goroutine local storage is that the value stays on the
+	// goroutine that stored it. Report from the test goroutine: t.Fatalf calls
+	// runtime.Goexit, which does not end the test when called anywhere else.
+	var leaked bool
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		_, ok := gls.Get("hello")
-		if ok {
-			t.Fatalf("fail to store goroutine local data")
-		}
-		wg.Done()
+		defer wg.Done()
+		_, leaked = gls.Get("hello")
 	}()
 	wg.Wait()
+	if leaked {
+		t.Fatal("stored value is visible from another goroutine")
+	}
+
 	v, ok := gls.Get("hello")
 	if !ok {
-		t.Fatalf("cannot find gls data")
+		t.Fatal("stored value is not visible from the goroutine that stored it")
 	}
 	if v != "world" {
-		t.Fatalf("wrong gls data")
+		t.Errorf("stored value = %v, want world", v)
 	}
 
 	gls.Clear()
+	if _, ok := gls.Get("hello"); ok {
+		t.Error("value is still visible after Clear")
+	}
 }
