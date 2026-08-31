@@ -5,10 +5,11 @@
 package bo
 
 import (
+	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
 	"gonum.org/v1/gonum/optimize"
 )
 
@@ -115,29 +116,22 @@ func (f randerFunc) Rand(x []float64) []float64 {
 	return f(x)
 }
 
+// isFatalErr reports whether err should stop the optimization. A failed line
+// search, a round that made no progress, and an objective function complaint
+// are all expected during exploration; anything else is fatal.
+//
+// The checks unwrap on their own, so the wrapping the callers add is
+// transparent here.
 func isFatalErr(err error) bool {
 	if err == nil {
 		return false
 	}
-
-	// Only recurse 100 times before breaking.
-	for i := 0; i < 100; i++ {
-		parent := errors.Cause(err)
-		if parent == err {
-			break
-		}
-		err = parent
-	}
-
-	if _, ok := err.(optimize.ErrFunc); ok {
+	var errFunc optimize.ErrFunc
+	if errors.As(err, &errFunc) {
 		return false
 	}
-	switch err {
-	case optimize.ErrLinesearcherFailure, optimize.ErrNoProgress:
-		return false
-	default:
-		return true
-	}
+	return !errors.Is(err, optimize.ErrLinesearcherFailure) &&
+		!errors.Is(err, optimize.ErrNoProgress)
 }
 
 // Next returns the next best x values to explore. If more than rounds have
@@ -169,7 +163,7 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 	f := func(x []float64) float64 {
 		v, err := o.mu.exploration.Estimate(o.mu.gp, o.mu.minimize, x)
 		if err != nil {
-			fErr = errors.Wrap(err, "exploration error")
+			fErr = fmt.Errorf("exploration error: %w", err)
 		}
 
 		if o.mu.minimize {
@@ -182,7 +176,7 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 		Grad: func(grad, x []float64) {
 			g, err := o.mu.gp.Gradient(x)
 			if err != nil {
-				fErr = errors.Wrap(err, "gradient error")
+				fErr = fmt.Errorf("gradient error: %w", err)
 			}
 			copy(grad, g)
 		},
@@ -197,7 +191,7 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 		}),
 	})
 	if err != nil {
-		return nil, false, errors.Wrapf(err, "random sample failed")
+		return nil, false, fmt.Errorf("random sample failed: %w", err)
 	}
 	if fErr != nil {
 		o.mu.explorationErr = fErr
@@ -215,7 +209,7 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 	{
 		result, err := optimize.Minimize(problem, minX, nil, grad)
 		if isFatalErr(err) {
-			o.mu.explorationErr = errors.Wrapf(err, "random sample optimize failed")
+			o.mu.explorationErr = fmt.Errorf("random sample optimize failed: %w", err)
 		}
 		if fErr != nil {
 			o.mu.explorationErr = fErr
@@ -231,7 +225,7 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 		x := sampleParams(o.mu.params)
 		result, err := optimize.Minimize(problem, x, nil, grad)
 		if isFatalErr(err) {
-			o.mu.explorationErr = errors.Wrapf(err, "gradient descent failed: i %d, x %+v, result%+v", i, x, result)
+			o.mu.explorationErr = fmt.Errorf("gradient descent failed: i %d, x %+v, result%+v: %w", i, x, result, err)
 		}
 		if fErr != nil {
 			o.mu.explorationErr = fErr
@@ -282,7 +276,7 @@ func (o *Optimizer) Predict(X []map[Param]float64, Y []float64) (x map[Param]flo
 	}
 	x, _, err = o.eval()
 	if x == nil || err != nil {
-		return nil, errors.Wrapf(err, "failed to get next point")
+		return nil, fmt.Errorf("failed to get next point: %w", err)
 	}
 	return
 }
@@ -307,7 +301,7 @@ func (o *Optimizer) RunSerial(f func(map[Param]float64) float64) (x map[Param]fl
 
 		x, _, err := o.Next()
 		if err != nil {
-			return nil, 0, errors.Wrapf(err, "failed to get next point")
+			return nil, 0, fmt.Errorf("failed to get next point: %w", err)
 		}
 		if x == nil {
 			break
@@ -352,7 +346,7 @@ func (o *Optimizer) Run(f func(map[Param]float64) float64) (x map[Param]float64,
 
 		x, parallel, err := o.Next()
 		if err != nil {
-			return nil, 0, errors.Wrapf(err, "failed to get next point")
+			return nil, 0, fmt.Errorf("failed to get next point: %w", err)
 		}
 		if x == nil {
 			break

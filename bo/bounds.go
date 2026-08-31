@@ -5,7 +5,8 @@
 package bo
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+
 	"gonum.org/v1/gonum/optimize"
 )
 
@@ -79,5 +80,5 @@ func (m BoundsMethod) Status() (optimize.Status, error) {
 	if ok {
 		return s.Status()
 	}
-	return optimize.NotTerminated, errors.Errorf("not Statuser")
+	return optimize.NotTerminated, errors.New("method is not an optimize.Statuser")
 }

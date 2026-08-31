@@ -5,7 +5,7 @@
 // Speech to text
 // https://cloud.google.com/speech-to-text/docs/async-recognize
 // https://cloud.google.com/speech-to-text/docs/apis
-// https://pkg.go.dev/google.golang.org/genproto@v0.0.0-20201214200347-8c77b98c765d/googleapis/cloud/speech/v1
+// https://pkg.go.dev/cloud.google.com/go/speech/apiv1p1beta1/speechpb
 package main
 
 import (
@@ -17,7 +17,7 @@ import (
 	"os"
 
 	speech "cloud.google.com/go/speech/apiv1p1beta1"
-	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1p1beta1"
+	speechpb "cloud.google.com/go/speech/apiv1p1beta1/speechpb"
 )
 
 func main() {
@@ -76,7 +76,7 @@ func send(w io.Writer, client *speech.Client, gsf string) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile("all.txt", b, os.ModePerm)
+	err = os.WriteFile("all.txt", b, 0o600)
 	if err != nil {
 		return err
 	}

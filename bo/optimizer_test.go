@@ -15,9 +15,10 @@ import (
 	"testing"
 
 	"changkun.de/x/pkg/bo"
-	"github.com/pkg/errors"
-	"github.com/wcharczuk/go-chart"
+
+	"github.com/wcharczuk/go-chart/v2"
 	"gonum.org/v1/gonum/floats"
+	"gonum.org/v1/gonum/floats/scalar"
 )
 
 // SaveAll saves all dimension graphs of the gaussian process to a temp
@@ -49,7 +50,7 @@ func saveAll(gp *bo.GP) (string, error) {
 func RenderGP(gp *bo.GP, w io.Writer, dim int) error {
 	dims := gp.Dims()
 	if dim >= dims {
-		return errors.Errorf("requested graph of dimension %d; only %d dimensions", dim, dims)
+		return fmt.Errorf("requested graph of dimension %d; only %d dimensions", dim, dims)
 	}
 
 	inputs, outputs := gp.RawData()
@@ -78,16 +79,16 @@ func RenderGP(gp *bo.GP, w io.Writer, dim int) error {
 
 	graph := chart.Chart{
 		Title:      fmt.Sprintf("%s vs. %s", gp.Name(dim), gp.OutputName()),
-		TitleStyle: chart.StyleShow(),
+		TitleStyle: chart.Shown(),
 		XAxis: chart.XAxis{
 			Name:      gp.Name(dim),
-			NameStyle: chart.StyleShow(),
-			Style:     chart.StyleShow(),
+			NameStyle: chart.Shown(),
+			Style:     chart.Shown(),
 		},
 		YAxis: chart.YAxis{
 			Name:      gp.OutputName(),
-			NameStyle: chart.StyleShow(),
-			Style:     chart.StyleShow(),
+			NameStyle: chart.Shown(),
+			Style:     chart.Shown(),
 		},
 		Background: chart.Style{
 			Padding: chart.Box{
@@ -174,7 +175,6 @@ outer:
 			XValues: knownX,
 			YValues: knownY,
 			Style: chart.Style{
-				Show:        true,
 				StrokeWidth: chart.Disabled,
 				DotWidth:    5,
 			},
@@ -215,14 +215,14 @@ func TestOptimizer(t *testing.T) {
 	{
 		got := x[X]
 		want := 0.0
-		if !floats.EqualWithinAbs(got, want, 0.01) {
+		if !scalar.EqualWithinAbs(got, want, 0.01) {
 			t.Errorf("got x = %f; not %f", got, want)
 		}
 	}
 	{
 		got := y
 		want := 1.0
-		if !floats.EqualWithinAbs(got, want, 0.01) {
+		if !scalar.EqualWithinAbs(got, want, 0.01) {
 			t.Errorf("got y = %f; not %f", got, want)
 		}
 	}
@@ -262,14 +262,14 @@ func TestOptimizerMax(t *testing.T) {
 	{
 		got := x[X]
 		want := 0.0
-		if !floats.EqualWithinAbs(got, want, 0.01) {
+		if !scalar.EqualWithinAbs(got, want, 0.01) {
 			t.Errorf("got x = %f; not %f", got, want)
 		}
 	}
 	{
 		got := y
 		want := 0.0
-		if !floats.EqualWithinAbs(got, want, 0.01) {
+		if !scalar.EqualWithinAbs(got, want, 0.01) {
 			t.Errorf("got y = %f; not %f", got, want)
 		}
 	}
@@ -309,14 +309,14 @@ func TestOptimizerBounds(t *testing.T) {
 	{
 		got := x[X]
 		want := 5.0
-		if !floats.EqualWithinRel(got, want, 0.2) {
+		if !scalar.EqualWithinRel(got, want, 0.2) {
 			t.Errorf("got x = %f; not %f", got, want)
 		}
 	}
 	{
 		got := y
 		want := 26.0
-		if !floats.EqualWithinRel(got, want, 0.44) {
+		if !scalar.EqualWithinRel(got, want, 0.44) {
 			t.Errorf("got y = %f; not %f", got, want)
 		}
 	}

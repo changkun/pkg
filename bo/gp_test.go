@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"changkun.de/x/pkg/bo"
-	"gonum.org/v1/gonum/floats"
+	"gonum.org/v1/gonum/floats/scalar"
 )
 
 func f(x, y float64) float64 {
@@ -37,10 +37,10 @@ func TestKnown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !floats.EqualWithinAbs(mean, f(0.25, 0.75), 0.0001) {
+	if !scalar.EqualWithinAbs(mean, f(0.25, 0.75), 0.0001) {
 		t.Fatalf("got mean = %f; not 1", mean)
 	}
-	if !floats.EqualWithinAbs(variance, 0, 0.0001) {
+	if !scalar.EqualWithinAbs(variance, 0, 0.0001) {
 		t.Fatalf("got variance = %f; not 0", variance)
 	}
 }
