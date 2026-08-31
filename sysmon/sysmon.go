@@ -5,7 +5,6 @@
 package sysmon
 
 import (
-	"fmt"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -13,21 +12,30 @@ import (
 	"changkun.de/x/pkg/rp"
 )
 
+// Monitor lifecycle states.
+const (
+	running int32 = iota
+	stopping
+	stopped
+)
+
 type sysmon struct {
 	p                       rp.RandomProcess
 	observeFunc, syscapFunc func() int64
-	actionFunc              func(int64) interface{}
+	actionFunc              func(int64) any
 	interval                time.Duration
-	stopped                 int32
+	state                   atomic.Int32
 }
 
 var sysmon0 sysmon
 
-// Init ...
+// Init prepares the monitor. observeFunc reports the events seen since the
+// last check, syscapFunc reports the capacity available now, and actionFunc
+// applies the scaling suggestion.
 func Init(
 	windowSize int, confidence float64,
 	observeFunc, syscapFunc func() int64,
-	actionFunc func(int64) interface{},
+	actionFunc func(int64) any,
 	interval time.Duration,
 ) {
 	sysmon0 = sysmon{
@@ -39,27 +47,27 @@ func Init(
 	}
 }
 
-// Run runs an initialized system momitor
+// Run starts an initialized system monitor. It returns immediately; the
+// monitor runs until Stop.
 func Run() {
 	go func() {
 		for {
-			if atomic.CompareAndSwapInt32(&sysmon0.stopped, 1, 2) {
-				break
+			if sysmon0.state.CompareAndSwap(stopping, stopped) {
+				return
 			}
 
 			time.Sleep(sysmon0.interval)
 
-			ob := sysmon0.observeFunc()
-			cap := sysmon0.syscapFunc()
-			fmt.Printf("sysmon: check, ob: %v, cap: %v\n", ob, cap)
+			nevents := sysmon0.observeFunc()
+			capacity := sysmon0.syscapFunc()
 
-			// store number of events during sleep
-			if ob > 0 {
-				sysmon0.p.Store(float64(ob))
+			// Store number of events during sleep.
+			if nevents > 0 {
+				sysmon0.p.Store(float64(nevents))
 			}
 
-			suggestion, ok := sysmon0.p.Acceptable(float64(sysmon0.syscapFunc()))
-			if cap > suggestion {
+			suggestion, ok := sysmon0.p.Acceptable(float64(capacity))
+			if capacity > suggestion {
 				if !sysmon0.p.Significant() || ok {
 					continue
 				}
@@ -70,16 +78,15 @@ func Run() {
 	}()
 }
 
-// Stop stops system monitoring
+// Stop stops system monitoring. If wait is true it returns only once the
+// monitor goroutine has exited, so the caller may then read whatever the
+// callbacks were writing.
 func Stop(wait bool) {
-	atomic.CompareAndSwapInt32(&sysmon0.stopped, 0, 1)
+	sysmon0.state.CompareAndSwap(running, stopping)
 	if !wait {
 		return
 	}
-	for {
-		if atomic.LoadInt32(&sysmon0.stopped) == 2 {
-			break
-		}
+	for sysmon0.state.Load() != stopped {
 		runtime.Gosched()
 	}
 }
