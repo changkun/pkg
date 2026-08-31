@@ -442,3 +442,50 @@ func TestStopLeavesSchedulerUsable(t *testing.T) {
 		t.Errorf("execution order = %v, want %v", got, want)
 	}
 }
+
+// TestTriggerRunsImmediately pins what Trigger documents. The scheduler
+// compared a popped task against the task's own GetExecution rather than the
+// priority it had been queued with. Trigger sets the priority to now while
+// GetExecution stays in the future, so a triggered task was pushed straight
+// back to its original slot and Trigger only reordered the heap for an
+// instant. The task then ran at its original time, behind anything scheduled
+// in between.
+func TestTriggerRunsImmediately(t *testing.T) {
+	tests.O.Clear()
+	defer Stop()
+
+	start := time.Now().UTC()
+	// Due far enough out that the test cannot pass by waiting for it.
+	distant := tests.NewTask("distant", start.Add(later))
+	Submit(distant)
+
+	Trigger(distant).Get()
+
+	if elapsed := time.Since(start); elapsed >= later {
+		t.Errorf("triggered task ran after %v, want well under its %v deadline", elapsed, later)
+	}
+	want := []string{"distant"}
+	if got := tests.O.Get(); !reflect.DeepEqual(got, want) {
+		t.Errorf("execution order = %v, want %v", got, want)
+	}
+}
+
+// TestTriggerBeatsAnEarlierTask is the ordering TestSchedSchedule2 asserts,
+// stated directly: a task triggered now runs before one scheduled later, no
+// matter which goroutine reaches the scheduler first.
+func TestTriggerBeatsAnEarlierTask(t *testing.T) {
+	tests.O.Clear()
+	defer Stop()
+
+	start := time.Now().UTC()
+	distant := tests.NewTask("distant", start.Add(later))
+	Submit(distant)
+	Submit(tests.NewTask("soon", start.Add(soon)))
+
+	Trigger(distant).Get()
+
+	want := []string{"distant"}
+	if got := tests.O.Get(); !reflect.DeepEqual(got, want) {
+		t.Errorf("execution order = %v, want %v; the triggered task must run first", got, want)
+	}
+}

@@ -182,11 +182,11 @@ func (s *sched) pause() {
 }
 
 func (s *sched) resume() {
-	t := s.tasks.peek()
-	if t == nil {
+	due, ok := s.tasks.peek()
+	if !ok {
 		return
 	}
-	s.setTimer(t.GetExecution().Sub(time.Now().UTC()))
+	s.setTimer(due.Sub(time.Now().UTC()))
 	ctx, cancel := context.WithCancel(context.Background())
 	if x, ok := s.cancel.Load().(context.CancelFunc); ok {
 		x()
@@ -237,10 +237,17 @@ func (s *sched) execute(t *task) {
 		}
 	}()
 
-	// for timer tollerance
-	if t.value.GetExecution().After(time.Now().UTC()) {
+	// Timers can fire a little early. If this task is not due yet, put it
+	// back rather than running it ahead of time.
+	//
+	// The comparison is against the queue priority, not the task's own
+	// GetExecution. Trigger schedules a task for now while its GetExecution
+	// stays in the future, so comparing against GetExecution sent every
+	// triggered task straight back to its original slot and Trigger did
+	// nothing but reorder the heap for one instant.
+	if t.priority.After(time.Now().UTC()) {
 		// reschedule task, we must save the task again by using s.Setup
-		s.reschedule(t, t.value.GetExecution())
+		s.reschedule(t, t.priority)
 		return
 	}
 	result, retry, err := t.value.Execute()
@@ -316,17 +323,18 @@ func (m *taskQueue) pop() *task {
 	return item
 }
 
-// peek the top priority item without deletion
-func (m *taskQueue) peek() (t Task) {
+// peek returns when the most urgent task is due, without removing it. It
+// reports the queue priority rather than the task's own GetExecution: those
+// differ whenever a task was triggered or rescheduled, and the priority is the
+// time the scheduler decided on.
+func (m *taskQueue) peek() (due time.Time, ok bool) {
 	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	if m.heap.Len() == 0 {
-		m.mu.Unlock()
-		return nil
+		return time.Time{}, false
 	}
-	t = (*m.heap)[0].value
-	m.mu.Unlock()
-	return
+	return (*m.heap)[0].priority, true
 }
 
 // update of a given task
