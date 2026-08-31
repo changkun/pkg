@@ -1,11 +1,15 @@
 package lights
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"changkun.de/x/pkg/net"
 )
+
+// requestTimeout bounds a single call to the bridge, in seconds.
+const requestTimeout = 100
 
 // Light represents an individual light component
 type Light struct {
@@ -33,20 +37,19 @@ type State struct {
 	ColorMode      string    `json:"colormode,omitempty"`
 }
 
-// Turn turns the lights on or off.
-func (l *Light) Turn(on bool) (bool, error) {
-	var action string
+// Turn turns the light on or off. Cancelling ctx aborts the request to the
+// bridge.
+func (l *Light) Turn(ctx context.Context, on bool) (bool, error) {
+	action := `{"on": false}`
 	if on {
-		action = "{\"on\": true}"
-	} else {
-		action = "{\"on\": false}"
+		action = `{"on": true}`
 	}
 
 	addr := fmt.Sprintf(apiLightState, l.Bridge.Hostname, l.Bridge.Username, l.ID)
-	err := net.HTTPRequest(addr,
-		http.MethodPut, []byte(action), &net.RequestParams{Timeout: 100}, &struct{}{})
+	err := net.HTTPRequest(ctx, addr,
+		http.MethodPut, []byte(action), &net.RequestParams{Timeout: requestTimeout}, &struct{}{})
 	if err != nil {
-		return false, fmt.Errorf("hue: turn off lights went wrong, message: %w", err)
+		return false, fmt.Errorf("hue: turn lights went wrong, message: %w", err)
 	}
 	return true, nil
 }

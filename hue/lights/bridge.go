@@ -1,6 +1,7 @@
 package lights
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -19,12 +20,13 @@ func NewBridge(hostname, username string) *Bridge {
 	return &Bridge{hostname, username}
 }
 
-// GetLights returns all lights in the given bridge
-func (l *Bridge) GetLights() ([]Light, error) {
+// GetLights returns all lights in the given bridge. Cancelling ctx aborts the
+// request to the bridge.
+func (l *Bridge) GetLights(ctx context.Context) ([]Light, error) {
 	var ll map[string]Light
 
-	err := net.HTTPRequest(fmt.Sprintf(apiLights, l.Hostname, l.Username),
-		http.MethodGet, nil, &net.RequestParams{Timeout: 100}, &ll)
+	err := net.HTTPRequest(ctx, fmt.Sprintf(apiLights, l.Hostname, l.Username),
+		http.MethodGet, nil, &net.RequestParams{Timeout: requestTimeout}, &ll)
 	if err != nil {
 		return nil, fmt.Errorf("hue: get lights went wrong, message: %w", err)
 	}

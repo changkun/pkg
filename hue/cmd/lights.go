@@ -43,28 +43,32 @@ var lightsTurnCmd = []*cobra.Command{
 	{
 		Use:   "on",
 		Short: "Turn on all lights",
-		Run:   turn,
+		RunE:  turn,
 	},
 	{
 		Use:   "off",
 		Short: "Turn off all lights",
-		Run:   turn,
+		RunE:  turn,
 	},
 }
 
-func turn(cmd *cobra.Command, args []string) {
-	l := lights.NewBridge(hostname, username)
+// turn switches every light on the bridge. It uses the command's context, so
+// an interrupt cancels the requests in flight, and reports failures through
+// RunE rather than panicking.
+func turn(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+	bridge := lights.NewBridge(hostname, username)
 
-	ls, err := l.GetLights()
+	ls, err := bridge.GetLights(ctx)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("cannot list lights: %w", err)
 	}
 
+	on := cmd.Use == "on"
 	for _, l := range ls {
-		if cmd.Use == "on" {
-			l.Turn(true)
-		} else {
-			l.Turn(false)
+		if _, err := l.Turn(ctx, on); err != nil {
+			return fmt.Errorf("cannot turn light %d: %w", l.ID, err)
 		}
 	}
+	return nil
 }
