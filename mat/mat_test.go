@@ -5,6 +5,7 @@
 package mat
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
@@ -105,13 +106,13 @@ func TestNewFail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewDense(tt.m, tt.n)(tt.arr...)
-			if err != ErrNumElem {
+			if !errors.Is(err, ErrNumElem) {
 				t.Errorf("New() error is nil, want err")
 			}
 		})
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewDenseP(tt.m, tt.n)(tt.arr...)
-			if err != ErrNumElem {
+			if !errors.Is(err, ErrNumElem) {
 				t.Errorf("NewP() error is nil, want err")
 			}
 		})

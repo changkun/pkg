@@ -10,11 +10,11 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math"
 	"mime/multipart"
@@ -129,7 +129,7 @@ func (c *Client) initSliceUpload(filename, language string, filesize, sliceNum i
 	params.Add("has_participle", "false")
 	params.Add("max_alternatives", "0")
 	params.Add("speaker_number", "2")
-	params.Add("has_seperate", "true")
+	params.Add("has_seperate", "true") //nolint:misspell // the vendor API spells the field this way
 	params.Add("language", language)
 	params.Add("pd", "tech")
 
@@ -291,7 +291,7 @@ func (c *Conn) postMulti(uri, filename string, content []byte, params url.Values
 	if err != nil {
 		return nil, err
 	}
-	request, err := http.NewRequest("POST", uri, body)
+	request, err := http.NewRequest(http.MethodPost, uri, body)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 
 	res, err := c.c.Do(request)
@@ -299,7 +299,7 @@ func (c *Conn) postMulti(uri, filename string, content []byte, params url.Values
 		return nil, err
 	}
 
-	return ioutil.ReadAll(res.Body)
+	return io.ReadAll(res.Body)
 }
 
 func (c *Conn) httpDo(url string, body []byte, params url.Values, headers map[string]string) ([]byte, error) {
@@ -321,7 +321,7 @@ func (c *Conn) httpDo(url string, body []byte, params url.Values, headers map[st
 	}
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func (c *Conn) getSizeAndSiceNum(filename string) (filesize, num int64, err error) {
@@ -338,7 +338,7 @@ func (c *Client) getBaseAuthParam(taskid string) url.Values {
 	mac := hmac.New(sha1.New, []byte(c.conn.conf.SecretKey))
 	strByte := []byte(c.conn.conf.AppID + ts)
 	strMd5Byte := md5.Sum(strByte)
-	strMd5 := fmt.Sprintf("%x", strMd5Byte)
+	strMd5 := hex.EncodeToString(strMd5Byte[:])
 	mac.Write([]byte(strMd5))
 	signa := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 

@@ -96,7 +96,8 @@ func (gp *GP) Add(x []float64, y float64) {
 }
 
 func isConditionErr(err error) bool {
-	_, ok := err.(mat.Condition)
+	var condition mat.Condition
+	ok := errors.As(err, &condition)
 	return ok
 }
 

@@ -64,7 +64,7 @@ func interestingGoroutine(g string) (*goroutine, error) {
 	}
 	id, err := strconv.ParseUint(h[1], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing goroutine id: %s", err)
+		return nil, fmt.Errorf("error parsing goroutine id: %w", err)
 	}
 
 	return &goroutine{id: id, stack: strings.TrimSpace(g)}, nil

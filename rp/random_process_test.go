@@ -45,13 +45,13 @@ func TestRandomProcess(t *testing.T) {
 	t.Run("Significant", func(t *testing.T) {
 		ws := map[*countProcess]bool{
 			// 100 is a significant bigger than previous one
-			&countProcess{
+			{
 				maxsize:    60,
 				nevents:    []float64{10, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 100},
 				confidence: 0.05,
 			}: true,
 			// 10 is not significant bigger enough than previous one
-			&countProcess{
+			{
 				maxsize:    60,
 				nevents:    []float64{10, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 10},
 				confidence: 0.05,
@@ -72,23 +72,23 @@ func TestRandomProcess(t *testing.T) {
 		ws := map[*countProcess]bool{
 			// 44 remaining slots isn't able to handle next sample
 			// because there is a significant increasing on #events
-			&countProcess{
+			{
 				maxsize:    60,
 				nevents:    []float64{1, 2, 3, 4, 8, 16, 32, 64, 100},
 				confidence: 0.05,
 			}: false,
-			&countProcess{
+			{
 				maxsize:    60,
 				nevents:    []float64{1, 2, 4, 8, 32, 64},
 				confidence: 0.05,
 			}: false,
 			// 44 remaining slots is able to handle next sample
-			&countProcess{
+			{
 				maxsize:    60,
 				nevents:    []float64{10, 2, 3, 4, 5, 6, 6, 5, 4, 3, 2, 10},
 				confidence: 0.05,
 			}: true,
-			&countProcess{
+			{
 				maxsize:    60,
 				nevents:    []float64{0},
 				confidence: 0.05,
@@ -101,7 +101,7 @@ func TestRandomProcess(t *testing.T) {
 			}
 		}
 
-		// if emaining slots are very low, but there are (literaly)
+		// if emaining slots are very low, but there are (literally)
 		// no requests at all, we think this is acceptable.
 		if _, ok := (&countProcess{
 			maxsize:    60,

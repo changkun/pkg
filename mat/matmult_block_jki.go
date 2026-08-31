@@ -45,7 +45,7 @@ func (A *Dense) DotBlockJKI(blockSize int, B, C Matrix) (err error) {
 		}
 	}
 
-	// residule bottom
+	// residue bottom
 	for jj = 0; jj < en; jj += blockSize {
 		for j = jj; j < jj+blockSize; j++ {
 			for k = en; k < A.Col(); k++ {
@@ -57,7 +57,7 @@ func (A *Dense) DotBlockJKI(blockSize int, B, C Matrix) (err error) {
 		}
 	}
 
-	// residule bottom right
+	// residue bottom right
 	for j = en; j < B.Col(); j++ {
 		for k = en; k < A.Col(); k++ {
 			r = B.At(k, j)
@@ -114,7 +114,7 @@ func (A *Dense) DotBlockJKIP(blockSize int, B, C Matrix) (err error) {
 		wg.Wait()
 	}
 
-	// residule bottom
+	// residue bottom
 	for jj := 0; jj < en; jj += blockSize {
 		wg.Add(1)
 		go func(jj int) {
@@ -131,7 +131,7 @@ func (A *Dense) DotBlockJKIP(blockSize int, B, C Matrix) (err error) {
 	}
 	wg.Wait()
 
-	// residule bottom right
+	// residue bottom right
 	for j := en; j < B.Col(); j++ {
 		wg.Add(1)
 		go func(j int) {

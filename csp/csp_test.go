@@ -478,16 +478,16 @@ func TestS61_TheSieveOfEratosthenes(t *testing.T) {
 }
 func TestS62_MatrixMultiplication(t *testing.T) {
 	A := [][]int{
-		[]int{1, 2, 3},
-		[]int{4, 5, 6},
-		[]int{7, 8, 9},
+		{1, 2, 3},
+		{4, 5, 6},
+		{7, 8, 9},
 	}
 	m := csp.S62_NewMatrix(A)
 	println(1)
 	IN := [][]int{
-		[]int{0, 0, 0},
-		[]int{0, 0, 0},
-		[]int{0, 0, 0},
+		{0, 0, 0},
+		{0, 0, 0},
+		{0, 0, 0},
 	}
 
 	if !reflect.DeepEqual(IN, m.S62_Multiply(IN)) {

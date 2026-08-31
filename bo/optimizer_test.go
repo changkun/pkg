@@ -7,7 +7,7 @@ package bo_test
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+
 	"math"
 	"os"
 	"path"
@@ -24,7 +24,7 @@ import (
 // SaveAll saves all dimension graphs of the gaussian process to a temp
 // directory and prints their file names.
 func saveAll(gp *bo.GP) (string, error) {
-	dir, err := ioutil.TempDir("", "plots")
+	dir, err := os.MkdirTemp("", "plots")
 	if err != nil {
 		return "", err
 	}
@@ -198,7 +198,7 @@ func TestOptimizer(t *testing.T) {
 		[]bo.Param{X},
 	)
 	x, y, err := o.Run(func(params map[bo.Param]float64) float64 {
-		return math.Pow(params[X], 2) + 1
+		return params[X]*params[X] + 1
 	})
 	if err != nil {
 		t.Errorf("%+v", err)
@@ -243,7 +243,7 @@ func TestOptimizerMax(t *testing.T) {
 		bo.WithRounds(30),
 	)
 	x, y, err := o.Run(func(params map[bo.Param]float64) float64 {
-		return -math.Pow(params[X], 2)
+		return -params[X] * params[X]
 	})
 	if err != nil {
 		t.Errorf("%+v", err)
@@ -289,7 +289,7 @@ func TestOptimizerBounds(t *testing.T) {
 		bo.WithRounds(30),
 	)
 	x, y, err := o.Run(func(params map[bo.Param]float64) float64 {
-		return math.Pow(params[X], 2) + 1
+		return params[X]*params[X] + 1
 	})
 	if err != nil {
 		t.Errorf("%+v", err)

@@ -46,7 +46,7 @@ func (l *Light) Turn(on bool) (bool, error) {
 	err := net.HTTPRequest(addr,
 		http.MethodPut, []byte(action), &net.RequestParams{Timeout: 100}, &struct{}{})
 	if err != nil {
-		return false, fmt.Errorf("hue: turn off lights went wrong, message: %v", err)
+		return false, fmt.Errorf("hue: turn off lights went wrong, message: %w", err)
 	}
 	return true, nil
 }

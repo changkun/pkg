@@ -88,7 +88,7 @@ func guess() {
 			r, g, b := uint8(params[X]*255), uint8(params[Y]*255), uint8(params[Z]*255)
 			word := "██████"
 			coloredWord := rgbterm.FgString(word, r, g, b)
-			fmt.Println("Is this your prefered color? ", coloredWord, " (", r, ", ", g, ", ", b, ")")
+			fmt.Println("Is this your preferred color? ", coloredWord, " (", r, ", ", g, ", ", b, ")")
 			reader := bufio.NewReader(os.Stdin)
 			fmt.Println("Grade? (0 dislike to 5 like):")
 			text, _ := reader.ReadString('\n')
@@ -110,7 +110,7 @@ func guess() {
 	r, g, b := uint8(x[X]*255), uint8(x[Y]*255), uint8(x[Z]*255)
 	word := "██████"
 	coloredWord := rgbterm.FgString(word, r, g, b)
-	fmt.Println("prefered color: ", coloredWord, " (", r, ", ", g, ", ", b, ")", " score: ", y)
+	fmt.Println("preferred color: ", coloredWord, " (", r, ", ", g, ", ", b, ")", " score: ", y)
 }
 
 func main() {

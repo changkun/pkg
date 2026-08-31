@@ -26,7 +26,7 @@ func (l *Bridge) GetLights() ([]Light, error) {
 	err := net.HTTPRequest(fmt.Sprintf(apiLights, l.Hostname, l.Username),
 		http.MethodGet, nil, &net.RequestParams{Timeout: 100}, &ll)
 	if err != nil {
-		return nil, fmt.Errorf("hue: get lights went wrong, message: %v", err)
+		return nil, fmt.Errorf("hue: get lights went wrong, message: %w", err)
 	}
 
 	var ret []Light
@@ -34,7 +34,7 @@ func (l *Bridge) GetLights() ([]Light, error) {
 	for id, v := range ll {
 		iid, err := strconv.Atoi(id)
 		if err != nil {
-			return nil, fmt.Errorf("hue: convert light id error, message: %v", err)
+			return nil, fmt.Errorf("hue: convert light id error, message: %w", err)
 		}
 		v.ID = iid
 		v.Bridge = l

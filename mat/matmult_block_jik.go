@@ -62,7 +62,7 @@ func (A *Dense) DotBlockJIK(blockSize int, B, C Matrix) (err error) {
 		}
 	}
 
-	// residule bottom right
+	// residue bottom right
 	for j = en; j < B.Col(); j++ {
 		for i = 0; i < A.Row(); i++ {
 			sum = 0.0
@@ -142,7 +142,7 @@ func (A *Dense) DotBlockJIKP(blockSize int, B, C Matrix) (err error) {
 	}
 	wg.Wait()
 
-	// residule bottom right
+	// residue bottom right
 	for j := en; j < B.Col(); j++ {
 		wg.Add(1)
 		go func(j int) {

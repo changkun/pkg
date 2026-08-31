@@ -26,10 +26,10 @@ func TestSorts(t *testing.T) {
 	for name, sort := range sortfunc {
 		t.Run(name, func(t *testing.T) {
 			tc := []TestCase{
-				TestCase{input: []int{1}, want: []int{1}},
-				TestCase{input: []int{1, 2, 3}, want: []int{1, 2, 3}},
-				TestCase{input: []int{3, 2, 1}, want: []int{1, 2, 3}},
-				TestCase{input: []int{1, 6, 3, 7, 7, 34, 8, 9, 3, 9}, want: []int{1, 3, 3, 6, 7, 7, 8, 9, 9, 34}},
+				{input: []int{1}, want: []int{1}},
+				{input: []int{1, 2, 3}, want: []int{1, 2, 3}},
+				{input: []int{3, 2, 1}, want: []int{1, 2, 3}},
+				{input: []int{1, 6, 3, 7, 7, 34, 8, 9, 3, 9}, want: []int{1, 3, 3, 6, 7, 7, 8, 9, 9, 34}},
 			}
 			for _, tt := range tc {
 				result := sort(tt.input)

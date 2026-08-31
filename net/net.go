@@ -9,7 +9,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"net"
 	"net/http"
 	"net/url"
@@ -37,7 +38,7 @@ func QueryEncoder(m map[string]string) string {
 func HTTPRequest(url, method string, data []byte, params *RequestParams, response interface{}) (err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("utils: HTTPRequest error: %v", err)
+			err = fmt.Errorf("utils: HTTPRequest error: %w", err)
 		}
 	}()
 
@@ -69,7 +70,7 @@ func HTTPRequest(url, method string, data []byte, params *RequestParams, respons
 	defer func() {
 		err = resp.Body.Close()
 	}()
-	respBytes, err := ioutil.ReadAll(resp.Body)
+	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}

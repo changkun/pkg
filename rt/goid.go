@@ -18,7 +18,7 @@ import "runtime"
 // Since commit 4dfd7fdde5957e4f3ba1a0285333f7c807c28f03,
 // a goroutine id ends with a white space.
 //
-// Go 1 compatability promise garantees all
+// Go 1 compatibility promise guarantees all
 // versions of Go can use this function.
 func GoID() (id uint64) {
 	var buf [30]byte

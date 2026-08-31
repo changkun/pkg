@@ -7,6 +7,7 @@ package ds_test
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"testing"
 
 	"changkun.de/x/pkg/ds"
@@ -90,7 +91,7 @@ func TestRBTreeWithEqual(t *testing.T) {
 func TestRBTreeNoEqual(t *testing.T) {
 	N := 1000
 	for i := 0; i < N; i++ {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			tree := ds.NewRBTree(func(a, b interface{}) bool {
 				if a.(int) < b.(int) {
 					return true

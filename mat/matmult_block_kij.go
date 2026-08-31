@@ -45,7 +45,7 @@ func (A *Dense) DotBlockKIJ(blockSize int, B, C Matrix) (err error) {
 		}
 	}
 
-	// residule bottom
+	// residue bottom
 	for jj = 0; jj < en; jj += blockSize {
 		for k = en; k < A.Col(); k++ {
 			for i = 0; i < A.Row(); i++ {
@@ -57,7 +57,7 @@ func (A *Dense) DotBlockKIJ(blockSize int, B, C Matrix) (err error) {
 		}
 	}
 
-	// residule bottom right
+	// residue bottom right
 	for k = en; k < A.Col(); k++ {
 		for i = 0; i < A.Row(); i++ {
 			r = A.At(i, k)
@@ -114,7 +114,7 @@ func (A *Dense) DotBlockKIJP(blockSize int, B, C Matrix) (err error) {
 		wg.Wait()
 	}
 
-	// residule bottom
+	// residue bottom
 	for jj := 0; jj < en; jj += blockSize {
 		for k := en; k < A.Col(); k++ {
 			wg.Add(1)
@@ -131,7 +131,7 @@ func (A *Dense) DotBlockKIJP(blockSize int, B, C Matrix) (err error) {
 	}
 	wg.Wait()
 
-	// residule bottom right
+	// residue bottom right
 	for k := en; k < A.Col(); k++ {
 		for i := 0; i < A.Row(); i++ {
 			wg.Add(1)

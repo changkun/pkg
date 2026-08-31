@@ -21,7 +21,7 @@ func (s *Stack) Push(v interface{}) {
 
 // Pop pops the top value out of the stack
 func (s *Stack) Pop() interface{} {
-	v := s.v[len(s.v)]
+	v := s.v[len(s.v)-1]
 	s.v = s.v[:len(s.v)-1]
 	return v
 }

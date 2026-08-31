@@ -60,7 +60,7 @@ func (s *mutexStack) Push(v interface{}) {
 
 func (s *mutexStack) Pop() interface{} {
 	s.mu.Lock()
-	v := s.v[len(s.v)]
+	v := s.v[len(s.v)-1]
 	s.v = s.v[:len(s.v)-1]
 	s.mu.Unlock()
 	return v

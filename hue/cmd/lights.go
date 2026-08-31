@@ -40,12 +40,12 @@ var lightsCmd = &cobra.Command{
 }
 
 var lightsTurnCmd = []*cobra.Command{
-	&cobra.Command{
+	{
 		Use:   "on",
 		Short: "Turn on all lights",
 		Run:   turn,
 	},
-	&cobra.Command{
+	{
 		Use:   "off",
 		Short: "Turn off all lights",
 		Run:   turn,

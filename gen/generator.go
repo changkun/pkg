@@ -6,6 +6,7 @@ package gen
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -16,10 +17,12 @@ func RandomString(n int) string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var str string
 	length := len(alphanum)
+	var strSb19 strings.Builder
 	for i := 0; i < n; i++ {
 		a := alphanum[r.Intn(len(alphanum))%length]
-		str += string(a)
+		strSb19.WriteString(string(a))
 	}
+	str += strSb19.String()
 	return str
 }
 

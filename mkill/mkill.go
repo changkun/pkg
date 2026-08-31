@@ -81,11 +81,11 @@ func SetDebug(flag bool) {
 func getThreads() (int, error) {
 	out, err := exec.Command("bash", "-c", cmdThreads).Output()
 	if err != nil {
-		return 0, fmt.Errorf("mkill: failed to fetch #threads: %v", err)
+		return 0, fmt.Errorf("mkill: failed to fetch #threads: %w", err)
 	}
 	n, err := strconv.Atoi(strings.TrimSpace(string(out)))
 	if err != nil {
-		return 0, fmt.Errorf("mkill: failed to parse #threads: %v", err)
+		return 0, fmt.Errorf("mkill: failed to parse #threads: %w", err)
 	}
 	return n, nil
 }

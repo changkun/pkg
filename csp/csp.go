@@ -202,7 +202,7 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 		if len(tmp) > 80 {
 			cardimage = append(cardimage, tmp[:80]...)
 		} else {
-			cardimage = append(cardimage, tmp[:len(tmp)]...)
+			cardimage = append(cardimage, tmp[:]...)
 		}
 		for i := 0; i < len(cardimage); i++ {
 			X <- cardimage[i]
@@ -422,7 +422,7 @@ func (s *S43_SmallSetOfIntegers) Has(n int, has chan bool) {
 	return
 }
 
-// Insert inserts given n, done recieves true if n is inserted.
+// Insert inserts given n, done receives true if n is inserted.
 func (s *S43_SmallSetOfIntegers) Insert(n int, done chan bool) {
 	defer close(done)
 
