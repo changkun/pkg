@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # One pull request per ecosystem keeps the noise down and lets CI prove
+      # the whole set together rather than one module at a time.
+      golang-x:
+        patterns:
+          - golang.org/x/*
+      google:
+        patterns:
+          - google.golang.org/*
+          - cloud.google.com/*
+      others:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - golang.org/x/*
+          - google.golang.org/*
+          - cloud.google.com/*
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

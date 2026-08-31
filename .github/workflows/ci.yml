@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # Rerun weekly so a newly published advisory is reported without a push.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both are required, not redundant. metal, hotkey and mkill's darwin
+        # thread counter only build on macOS; mem only builds on Linux.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      # glfw and shiny's gldriver are cgo and need the X11 and GL development
+      # headers, which the runner image does not carry.
+      - name: Install X11 and GL headers
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1-mesa-dev libx11-dev libxcursor-dev libxi-dev \
+            libxinerama-dev libxrandr-dev libxxf86vm-dev
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -shuffle=on -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out | tail -1
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: coverage-${{ matrix.os }}
+          path: coverage.out
+          if-no-files-found: error
+
+  lint:
+    name: Lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # A single platform would analyse neither the darwin-tagged packages
+        # nor the linux-tagged one and still report success.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Install X11 and GL headers
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1-mesa-dev libx11-dev libxcursor-dev libxi-dev \
+            libxinerama-dev libxrandr-dev libxxf86vm-dev
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          # Pinned so a new release cannot turn a green branch red on its own,
+          # and so the version here matches the one used locally.
+          version: v2.13.2
+          args: --timeout=10m
+
+  vuln:
+    name: Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      # govulncheck reports only what the code actually reaches, so it catches
+      # advisories in transitive modules that a dependency list does not.
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  tidy:
+    name: Tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: go mod tidy is committed
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum

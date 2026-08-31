@@ -1,0 +1,81 @@
+version: "2"
+
+run:
+  # Both build tags matter here: several packages are darwin only (metal,
+  # hotkey, mkill) and mem is linux only, so a single-platform run analyses
+  # neither set. CI runs this config on both.
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - durationcheck
+    - errorlint
+    - gocritic
+    - misspell
+    - nilerr
+    - noctx
+    - perfsprint
+    - revive
+    - unconvert
+    - usestdlibvars
+    - wastedassign
+
+  settings:
+    errcheck:
+      # Unchecked type assertions stay off. In this repository they appear only
+      # in test comparators over the any-typed common.Less, where a wrong type
+      # should panic loudly rather than be turned into a silent zero value.
+      check-type-assertions: false
+    gocritic:
+      disabled-checks:
+        # The linear algebra and CSP packages name matrices and processes after
+        # the papers they come from, where A, B and X are capitalised. A
+        # capitalised local cannot be exported, so the warning has nothing to
+        # protect here.
+        - captLocal
+    misspell:
+      ignore-rules:
+        # gonum's optimize.Statuser, read as a misspelling of "stature".
+        - statuser
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+          disabled: true
+    staticcheck:
+      checks:
+        - all
+
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      # The csp package reproduces the examples of Hoare's 1978 paper and
+      # names each one after the section it comes from, so S41_In is section
+      # 4.1. The underscore carries that structure; ST1003 would flatten it.
+      - path: 'csp/csp\.go'
+        text: 'ST1003'
+        linters:
+          - staticcheck
+
+      # Generated protobuf and gRPC stubs are not ours to style.
+      - path: 'benchs/restrpc/rpcs/.*\.pb\.go'
+        linters:
+          - revive
+          - gocritic
+          - staticcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
