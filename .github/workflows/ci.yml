@@ -28,20 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          check-latest: true
-
-      # glfw and shiny's gldriver are cgo and need the X11 and GL development
-      # headers, which the runner image does not carry.
-      - name: Install X11 and GL headers
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libgl1-mesa-dev libx11-dev libxcursor-dev libxi-dev \
-            libxinerama-dev libxrandr-dev libxxf86vm-dev
+      - uses: ./.github/actions/setup-go-env
 
       - name: Build
         run: go build ./...
@@ -73,18 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          check-latest: true
-
-      - name: Install X11 and GL headers
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libgl1-mesa-dev libx11-dev libxcursor-dev libxi-dev \
-            libxinerama-dev libxrandr-dev libxxf86vm-dev
+      - uses: ./.github/actions/setup-go-env
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
@@ -100,10 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          check-latest: true
+      - uses: ./.github/actions/setup-go-env
 
       # govulncheck reports only what the code actually reaches, so it catches
       # advisories in transitive modules that a dependency list does not.
@@ -116,10 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          check-latest: true
+      - uses: ./.github/actions/setup-go-env
 
       - name: go mod tidy is committed
         run: |

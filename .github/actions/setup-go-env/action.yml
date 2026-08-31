@@ -1,0 +1,25 @@
+name: Set up Go environment
+description: >
+  Installs the toolchain named by go.mod and, on Linux, the C headers the cgo
+  packages need. Every job that loads packages needs both, so they live here
+  rather than being repeated per job where they can drift apart.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        check-latest: true
+
+    # glfw and shiny's gldriver are cgo. gldriver reaches x/mobile/gl, which
+    # includes GLES3/gl3.h from libgles-dev; the rest are X11 and desktop GL.
+    # None ship with the runner image.
+    - name: Install X11 and GL headers
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libgl1-mesa-dev libgles-dev libx11-dev libxcursor-dev libxi-dev \
+          libxinerama-dev libxrandr-dev libxxf86vm-dev
