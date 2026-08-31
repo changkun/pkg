@@ -11,11 +11,8 @@ import (
 )
 
 func newSkipList() *ds.SkipList {
-	return ds.NewSkipList(func(a, b interface{}) bool {
-		if a.(int) < b.(int) {
-			return true
-		}
-		return false
+	return ds.NewSkipList(func(a, b any) bool {
+		return a.(int) < b.(int)
 	})
 }
 
@@ -134,7 +131,7 @@ func TestSkipList_Range(t *testing.T) {
 	}
 
 	current := 10
-	sl.Range(10, 20, func(v interface{}) {
+	sl.Range(10, 20, func(v any) {
 		if v != current {
 			t.Fatalf("range failed, want %v, got %v", current, v)
 		}
@@ -142,13 +139,114 @@ func TestSkipList_Range(t *testing.T) {
 	})
 
 	current = 90
-	sl.Range(90, 120, func(v interface{}) {
+	sl.Range(90, 120, func(v any) {
 		if v != current {
 			t.Fatalf("range failed, want %v, got %v", current, v)
 		}
 		current++
 	})
-	if current != 99 {
-		t.Fatalf("range out of bound, want %v, got %v", 99, current)
+	// Range covers [from, to), clipped to the end of the list, so the last
+	// key 99 is included and current lands one past it.
+	if current != 100 {
+		t.Fatalf("range out of bound, want %v, got %v", 100, current)
+	}
+}
+
+// path returns the first item whose key is not smaller than the one looked
+// up, so every lookup has to compare that candidate against the key it wanted.
+// The comparison read s.less(x.k, k) on both sides of an or, which is always
+// false for that candidate, so each of these operations answered about a
+// neighbouring key instead.
+
+func TestSkipList_GetMissingKeyWithSuccessor(t *testing.T) {
+	sl := newSkipList()
+	for _, k := range []int{10, 20, 30} {
+		sl.Set(k, k)
+	}
+
+	// 15 is absent, and 20 is the candidate the descent lands on.
+	if v, ok := sl.Get(15); ok {
+		t.Errorf("Get(15) = %v, %v, want nil, false", v, ok)
+	}
+	// 5 is below every key, so the candidate is the first item.
+	if v, ok := sl.Get(5); ok {
+		t.Errorf("Get(5) = %v, %v, want nil, false", v, ok)
+	}
+	// 35 is past the end and has no candidate at all.
+	if v, ok := sl.Get(35); ok {
+		t.Errorf("Get(35) = %v, %v, want nil, false", v, ok)
+	}
+}
+
+func TestSkipList_SearchMissingKeyWithSuccessor(t *testing.T) {
+	sl := newSkipList()
+	for _, k := range []int{10, 20, 30} {
+		sl.Set(k, k)
+	}
+
+	if sl.Search(15) {
+		t.Error("Search(15) = true, want false")
+	}
+	if !sl.Search(20) {
+		t.Error("Search(20) = false, want true")
+	}
+}
+
+func TestSkipList_DelMissingKeyKeepsNeighbour(t *testing.T) {
+	sl := newSkipList()
+	for _, k := range []int{10, 20, 30} {
+		sl.Set(k, k)
+	}
+
+	if v, ok := sl.Del(15); ok {
+		t.Errorf("Del(15) = %v, %v, want nil, false", v, ok)
+	}
+	if got := sl.Len(); got != 3 {
+		t.Errorf("Len after deleting an absent key = %d, want 3", got)
+	}
+	if v, ok := sl.Get(20); !ok || v != 20 {
+		t.Errorf("Get(20) = %v, %v after deleting an absent key, want 20, true", v, ok)
+	}
+}
+
+func TestSkipList_SetExistingKeyReplaces(t *testing.T) {
+	sl := newSkipList()
+	sl.Set(1, "first")
+	sl.Set(1, "second")
+
+	if got := sl.Len(); got != 1 {
+		t.Errorf("Len after setting the same key twice = %d, want 1", got)
+	}
+	if v, ok := sl.Get(1); !ok || v != "second" {
+		t.Errorf("Get(1) = %v, %v, want second, true", v, ok)
+	}
+
+	// A duplicate hides rather than replaces, so deleting once must leave
+	// nothing behind.
+	if _, ok := sl.Del(1); !ok {
+		t.Fatal("Del(1) = false, want true")
+	}
+	if v, ok := sl.Get(1); ok {
+		t.Errorf("Get(1) = %v, %v after delete, want nil, false", v, ok)
+	}
+}
+
+func TestSkipList_RangeIncludesLastKey(t *testing.T) {
+	sl := newSkipList()
+	for i := range 5 {
+		sl.Set(i, i)
+	}
+
+	var got []any
+	sl.Range(3, 100, func(v any) { got = append(got, v) })
+	if len(got) != 2 || got[0] != 3 || got[1] != 4 {
+		t.Errorf("Range(3, 100) visited %v, want [3 4]", got)
+	}
+
+	// A start past the end has no candidate; Range must return, not panic.
+	got = nil
+	sl.Range(99, 100, func(v any) { got = append(got, v) })
+	if len(got) != 0 {
+		t.Errorf("Range(99, 100) visited %v, want nothing", got)
 	}
 }

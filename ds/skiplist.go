@@ -35,13 +35,20 @@ func (s *SkipList) Len() int {
 	return s.len
 }
 
+// equal reports whether a and b are the same key under the list's ordering.
+// The list only knows how to compare keys with less, so two keys are equal
+// exactly when neither is smaller than the other.
+func (s *SkipList) equal(a, b any) bool {
+	return !s.less(a, b) && !s.less(b, a)
+}
+
 // Set sets given k and v pair into the skiplist.
-func (s *SkipList) Set(k interface{}, v interface{}) {
+func (s *SkipList) Set(k, v any) {
 	// s.level starts from 0, we need to allocate one
 	update := make([]*skiplistitem, s.level()+1, s.effectiveMaxLevel()+1) // make(type, len, cap)
 
 	x := s.path(s.header, update, k)
-	if x != nil && (s.less(x.k, k) || s.less(x.k, k)) { // if key exist, update
+	if x != nil && s.equal(x.k, k) { // if key exists, update
 		x.v = v
 		return
 	}
@@ -67,7 +74,11 @@ func (s *SkipList) Set(k interface{}, v interface{}) {
 	s.len++
 }
 
-func (s *SkipList) path(x *skiplistitem, update []*skiplistitem, k interface{}) (candidate *skiplistitem) {
+// path descends the list to the first item whose key is not smaller than k,
+// recording in update the last item visited at each level. The returned
+// candidate is the only item that can hold k, but its key may be larger, so
+// callers must still compare it against k.
+func (s *SkipList) path(x *skiplistitem, update []*skiplistitem, k any) (candidate *skiplistitem) {
 	depth := len(x.forward) - 1
 	for i := depth; i >= 0; i-- {
 		for x.forward[i] != nil && s.less(x.forward[i].k, k) {
@@ -87,43 +98,38 @@ func (s *SkipList) randomLevel() (n int) {
 }
 
 // Get returns corresponding v with given k.
-func (s *SkipList) Get(k interface{}) (v interface{}, ok bool) {
+func (s *SkipList) Get(k any) (v any, ok bool) {
 	x := s.path(s.header, nil, k)
-	if x == nil || (s.less(x.k, k) || s.less(x.k, k)) {
+	if x == nil || !s.equal(x.k, k) {
 		return nil, false
 	}
 	return x.v, true
 }
 
-// Search returns true if k is founded in the skiplist.
-func (s *SkipList) Search(k interface{}) (ok bool) {
+// Search returns true if k is found in the skiplist.
+func (s *SkipList) Search(k any) bool {
 	x := s.path(s.header, nil, k)
-	if x != nil {
-		ok = true
-		return
-	}
-	return
+	return x != nil && s.equal(x.k, k)
 }
 
-// Range interates `from` to `to` with `op`.
-func (s *SkipList) Range(from, to interface{}, op func(v interface{})) {
-	for start := s.path(s.header, nil, from); start.next() != nil; start = start.next() {
-		if !s.less(start.k, to) {
+// Range calls op with the value of every key in [from, to), in order. It
+// stops at the end of the list, so a `to` past the last key is not an error.
+func (s *SkipList) Range(from, to any, op func(v any)) {
+	for x := s.path(s.header, nil, from); x != nil; x = x.next() {
+		if !s.less(x.k, to) {
 			return
 		}
-
-		op(start.v)
+		op(x.v)
 	}
 }
 
 // Del returns the deleted value if ok
-func (s *SkipList) Del(k interface{}) (v interface{}, ok bool) {
+func (s *SkipList) Del(k any) (v any, ok bool) {
 	update := make([]*skiplistitem, s.level()+1, s.effectiveMaxLevel())
 
 	x := s.path(s.header, update, k)
-	if x == nil || (s.less(x.k, k) || s.less(x.k, k)) {
-		ok = false
-		return
+	if x == nil || !s.equal(x.k, k) {
+		return nil, false
 	}
 
 	v = x.v
@@ -151,8 +157,8 @@ func (s *SkipList) effectiveMaxLevel() int {
 
 type skiplistitem struct {
 	forward []*skiplistitem
-	k       interface{}
-	v       interface{}
+	k       any
+	v       any
 }
 
 func (s *skiplistitem) next() *skiplistitem {
