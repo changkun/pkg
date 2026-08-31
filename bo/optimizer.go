@@ -161,9 +161,9 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 
 	var fErr error
 	f := func(x []float64) float64 {
-		v, err := o.mu.exploration.Estimate(o.mu.gp, o.mu.minimize, x)
-		if err != nil {
-			fErr = fmt.Errorf("exploration error: %w", err)
+		v, eerr := o.mu.exploration.Estimate(o.mu.gp, o.mu.minimize, x)
+		if eerr != nil {
+			fErr = fmt.Errorf("exploration error: %w", eerr)
 		}
 
 		if o.mu.minimize {
@@ -174,9 +174,9 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 	problem := optimize.Problem{
 		Func: f,
 		Grad: func(grad, x []float64) {
-			g, err := o.mu.gp.Gradient(x)
-			if err != nil {
-				fErr = fmt.Errorf("gradient error: %w", err)
+			g, gerr := o.mu.gp.Gradient(x)
+			if gerr != nil {
+				fErr = fmt.Errorf("gradient error: %w", gerr)
 			}
 			copy(grad, g)
 		},
@@ -236,8 +236,13 @@ func (o *Optimizer) eval() (x map[Param]float64, parallel bool, err error) {
 		}
 	}
 
+	// A nil error with a nil point is how Next says "no more points". An
+	// exploration failure is usually a numerical precision problem, so the
+	// optimizer stops and keeps the best point it already found rather than
+	// discarding the run. The failure itself is available from
+	// ExplorationErr.
 	if o.mu.explorationErr != nil {
-		return nil, false, nil
+		return nil, false, nil //nolint:nilerr // reported through ExplorationErr
 	}
 
 	m := map[Param]float64{}
@@ -299,14 +304,14 @@ func (o *Optimizer) RunSerial(f func(map[Param]float64) float64) (x map[Param]fl
 			return nil, 0, errors.New("optimizer got stop signal")
 		}
 
-		x, _, err := o.Next()
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to get next point: %w", err)
+		next, _, nerr := o.Next()
+		if nerr != nil {
+			return nil, 0, fmt.Errorf("failed to get next point: %w", nerr)
 		}
-		if x == nil {
+		if next == nil {
 			break
 		}
-		o.Log(x, f(x))
+		o.Log(next, f(next))
 	}
 
 	atomic.StoreUint32(&o.running, 0)
@@ -344,11 +349,11 @@ func (o *Optimizer) Run(f func(map[Param]float64) float64) (x map[Param]float64,
 			return nil, 0, errors.New("optimizer got stop signal")
 		}
 
-		x, parallel, err := o.Next()
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to get next point: %w", err)
+		next, parallel, nerr := o.Next()
+		if nerr != nil {
+			return nil, 0, fmt.Errorf("failed to get next point: %w", nerr)
 		}
-		if x == nil {
+		if next == nil {
 			break
 		}
 		if parallel {
@@ -356,11 +361,11 @@ func (o *Optimizer) Run(f func(map[Param]float64) float64) (x map[Param]float64,
 			go func() {
 				defer wg.Done()
 
-				o.Log(x, f(x))
+				o.Log(next, f(next))
 			}()
 		} else {
 			wg.Wait()
-			o.Log(x, f(x))
+			o.Log(next, f(next))
 		}
 	}
 

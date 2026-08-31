@@ -90,8 +90,10 @@ func BenchmarkDotNaive(b *testing.B) {
 
 		for name, f := range fs {
 			b.Run(name, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					f(B, C)
+				for b.Loop() {
+					if err := f(B, C); err != nil {
+						b.Fatalf("multiply: %v", err)
+					}
 				}
 			})
 		}

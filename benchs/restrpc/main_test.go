@@ -33,7 +33,7 @@ const (
 // answers. The endpoint is not up the instant Listen returns, so a single
 // probe races the server and the poll has to retry rather than give up on the
 // first refused connection.
-func bootServer() error {
+func bootServer(ctx context.Context) error {
 	go func() {
 		if err := ser.RunRPC(); err != nil {
 			log.Printf("grpc server: %v", err)
@@ -48,7 +48,7 @@ func bootServer() error {
 	deadline := time.Now().Add(bootTimeout)
 	var last error
 	for time.Now().Before(deadline) {
-		if last = ping(); last == nil {
+		if last = ping(ctx); last == nil {
 			return nil
 		}
 		time.Sleep(bootRetry)
@@ -57,8 +57,12 @@ func bootServer() error {
 }
 
 // ping reports whether the REST health endpoint answers correctly.
-func ping() error {
-	res, err := http.Get(httpAddr + "/api/v1/ping")
+func ping(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, httpAddr+"/api/v1/ping", nil)
+	if err != nil {
+		return err
+	}
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -80,19 +84,19 @@ func ping() error {
 }
 
 func TestMain(m *testing.M) {
-	if err := bootServer(); err != nil {
+	if err := bootServer(context.Background()); err != nil {
 		log.Fatalf("fail to boot the service: %v", err)
 	}
 	os.Exit(m.Run())
 }
 
 // addREST posts an addition and returns the sum the server reports.
-func addREST(a, b float64) (float64, error) {
+func addREST(ctx context.Context, a, b float64) (float64, error) {
 	requestBody, err := json.Marshal(map[string]float64{"a": a, "b": b})
 	if err != nil {
 		return 0, err
 	}
-	req, err := http.NewRequest(http.MethodPost, httpAddr+"/api/v1/add", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, httpAddr+"/api/v1/add", bytes.NewReader(requestBody))
 	if err != nil {
 		return 0, err
 	}
@@ -128,7 +132,7 @@ func TestBothTransportsAgree(t *testing.T) {
 	const a, b = 42.0, 99.5
 	const want = a + b
 
-	got, err := addREST(a, b)
+	got, err := addREST(t.Context(), a, b)
 	if err != nil {
 		t.Fatalf("REST add: %v", err)
 	}
@@ -146,8 +150,9 @@ func TestBothTransportsAgree(t *testing.T) {
 }
 
 func BenchmarkAPIRestful(b *testing.B) {
+	ctx := b.Context()
 	for b.Loop() {
-		if _, err := addREST(42.0, 99.9); err != nil {
+		if _, err := addREST(ctx, 42.0, 99.9); err != nil {
 			b.Fatalf("REST add: %v", err)
 		}
 	}

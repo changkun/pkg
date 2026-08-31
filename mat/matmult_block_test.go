@@ -130,8 +130,10 @@ func BenchmarkDotBlock(b *testing.B) {
 
 		for name, f := range fs {
 			b.Run(name, func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
-					f(blockSize, B, C)
+				for b.Loop() {
+					if err := f(blockSize, B, C); err != nil {
+						b.Fatalf("multiply: %v", err)
+					}
 				}
 			})
 		}

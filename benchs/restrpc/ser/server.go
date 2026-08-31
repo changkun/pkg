@@ -62,7 +62,8 @@ func RunHTTP() error {
 
 // RunRPC serves the gRPC endpoint until Serve returns.
 func RunRPC() error {
-	l, err := net.Listen("tcp", addrGRPC)
+	var lc net.ListenConfig
+	l, err := lc.Listen(context.Background(), "tcp", addrGRPC)
 	if err != nil {
 		return err
 	}
