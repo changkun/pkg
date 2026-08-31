@@ -44,10 +44,10 @@ func (g *G) WithUndo(undo func()) *G {
 // does not get stopped and a good practice is to use
 // Cancel with WithUndo function:
 //
-//   g := g.Go(func() error { ... }).WithUndo(func() { ... })
-//   ...
-//   err := g.Cancel().Wait().Err()
-//   if err != nil { ... }
+//	g := g.Go(func() error { ... }).WithUndo(func() { ... })
+//	...
+//	err := g.Cancel().Wait().Err()
+//	if err != nil { ... }
 //
 // Then the settled undo function will be executed after
 // the cancellation.

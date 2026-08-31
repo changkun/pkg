@@ -7,31 +7,29 @@
 // 1. Identify peak load
 // The current approach:  Mann–Whitney U test
 //
-//   Consider a count process: N1= (n_1, ..., n_{p/2}), N2 = (n_{p/2}, ..., n_{p})
-//   and our goal is to check if N2 is significant higher than N1.
-//   Let hypothesis: H0: \mu_{N_1} \leq \mu_{N_2}, and H1: \mu_{N_1} > \mu_{N_2}
-//   Then rejection region is:
+//	Consider a count process: N1= (n_1, ..., n_{p/2}), N2 = (n_{p/2}, ..., n_{p})
+//	and our goal is to check if N2 is significant higher than N1.
+//	Let hypothesis: H0: \mu_{N_1} \leq \mu_{N_2}, and H1: \mu_{N_1} > \mu_{N_2}
+//	Then rejection region is:
 //
-//     z = \left|\frac{\mu_{N_2} - \mu_{N_1}}{\sigma_{N_1}}\right| \geq z(c)
+//	  z = \left|\frac{\mu_{N_2} - \mu_{N_1}}{\sigma_{N_1}}\right| \geq z(c)
 //
-//   We reject H0 under given confidence level.
-//   Since this approach assume the count process obey normal dist, it is
-//   recommended to have a window size higher than 15.
-//
+//	We reject H0 under given confidence level.
+//	Since this approach assume the count process obey normal dist, it is
+//	recommended to have a window size higher than 15.
 //
 // 2. Check if system resource can handle next peak load: Poisson + Moving average
 // The current approach: Markov Poisson process + Moving average
 //
-//   Consider p windows, and each number of events obey Poisson process,
-//   then \lambda = \frac{1}{p} \sum_{i=1}^{p} n_i, and in the next window,
-//   the probability of having k number of events is:
+//	Consider p windows, and each number of events obey Poisson process,
+//	then \lambda = \frac{1}{p} \sum_{i=1}^{p} n_i, and in the next window,
+//	the probability of having k number of events is:
 //
-//     P(N=k) = \frac{\lambda^k \exp{-\lambda}}{k!}, k = 0, 1, ...
+//	  P(N=k) = \frac{\lambda^k \exp{-\lambda}}{k!}, k = 0, 1, ...
 //
-//   Assume a system can handle Q requests, then we have:
+//	Assume a system can handle Q requests, then we have:
 //
-//     P(N\leq Q) = \sum_{i=0}^{Q} P(N=i) = \sum_{i=0}^{Q} \frac{\lambda^k \exp{\left(-\lambda\right)}}{k!}
-//
+//	  P(N\leq Q) = \sum_{i=0}^{Q} P(N=i) = \sum_{i=0}^{Q} \frac{\lambda^k \exp{\left(-\lambda\right)}}{k!}
 package rp
 
 import (

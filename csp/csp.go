@@ -6,75 +6,75 @@
 //
 // Program structure
 //
-//   <cmd>               ::= <simple cmd> | <structured cmd>
-//   <simple cmd>        ::= <assignment cmd> | <input cmd> | <output cmd>
-//   <structured cmd>    ::= <alternative cmd> | <repetitive cmd> | <parallel cmd>
-//   <cmd list>          ::= {<declaration>; | <cmd>; } <cmd>
+//	<cmd>               ::= <simple cmd> | <structured cmd>
+//	<simple cmd>        ::= <assignment cmd> | <input cmd> | <output cmd>
+//	<structured cmd>    ::= <alternative cmd> | <repetitive cmd> | <parallel cmd>
+//	<cmd list>          ::= {<declaration>; | <cmd>; } <cmd>
 //
 // Parallel command
 //
-//   <parallel cmd>      ::= [<proc>{||<proc>}]
-//   <proc>              ::= <proc label> <cmd list>
-//   <proc label>        ::= <empty> | <identifier> :: | <identifier>(<label subscript>{,<label subscript>}) ::
-//   <label subscript>   ::= <integer const> | <range>
-//   <integer constant>  ::= <numeral> | <bound var>
-//   <bound var>         ::= <identifier>
-//   <range>             ::= <bound variable>:<lower bound>..<upper bound>
-//   <lower bound>       ::= <integer const>
-//   <upper bound>       ::= <integer const>
+//	<parallel cmd>      ::= [<proc>{||<proc>}]
+//	<proc>              ::= <proc label> <cmd list>
+//	<proc label>        ::= <empty> | <identifier> :: | <identifier>(<label subscript>{,<label subscript>}) ::
+//	<label subscript>   ::= <integer const> | <range>
+//	<integer constant>  ::= <numeral> | <bound var>
+//	<bound var>         ::= <identifier>
+//	<range>             ::= <bound variable>:<lower bound>..<upper bound>
+//	<lower bound>       ::= <integer const>
+//	<upper bound>       ::= <integer const>
 //
 // Assignment command
 //
-//   <assignment cmd>    ::= <target var> := <expr>
-//   <expr>              ::= <simple expr> | <structured expr>
-//   <structured expr>   ::= <constructor> ( <expr list> )
-//   <constructor>       ::= <identifier> | <empty>
-//   <expr list>         ::= <empty> | <expr> {, <expr> }
-//   <target var>        ::= <simple var> | <structured target>
-//   <structured target> ::= <constructor> ( <target var list> )
-//   <target var list>   ::= <empty> | <target var> {, <target var> }
+//	<assignment cmd>    ::= <target var> := <expr>
+//	<expr>              ::= <simple expr> | <structured expr>
+//	<structured expr>   ::= <constructor> ( <expr list> )
+//	<constructor>       ::= <identifier> | <empty>
+//	<expr list>         ::= <empty> | <expr> {, <expr> }
+//	<target var>        ::= <simple var> | <structured target>
+//	<structured target> ::= <constructor> ( <target var list> )
+//	<target var list>   ::= <empty> | <target var> {, <target var> }
 //
 // Input and output command
 //
-//   <input cmd>         ::= <source> ? <target var>
-//   <output cmd>        ::= <destination> ! <expr>
-//   <source>            ::= <proc name>
-//   <destination>       ::= <proc name>
-//   <proc name>         ::= <identifier> | <identifier> ( <subscripts> )
-//   <subscripts>        ::= <integer expr> {, <integer expr> }
+//	<input cmd>         ::= <source> ? <target var>
+//	<output cmd>        ::= <destination> ! <expr>
+//	<source>            ::= <proc name>
+//	<destination>       ::= <proc name>
+//	<proc name>         ::= <identifier> | <identifier> ( <subscripts> )
+//	<subscripts>        ::= <integer expr> {, <integer expr> }
 //
 // Repetitive and alternative command
 //
-//   <repetitive cmd>    ::= * <alternative cmd>
-//   <alternative cmd>   ::= [<guarded cmd> { □ <guarded cmd> }]
-//   <guarded cmd>       ::= <guard> → <cmd list> | ( <range> {, <range> }) <guard> → <cmd list>
-//   <guard>             ::= <guard list> | <guard list>;<input cmd> | <input cmd>
-//   <guard list>        ::= <guard elem> {; <guard elem>}
-//   <guard elem>        ::= <boolean expr> | <declaration>
+//	<repetitive cmd>    ::= * <alternative cmd>
+//	<alternative cmd>   ::= [<guarded cmd> { □ <guarded cmd> }]
+//	<guarded cmd>       ::= <guard> → <cmd list> | ( <range> {, <range> }) <guard> → <cmd list>
+//	<guard>             ::= <guard list> | <guard list>;<input cmd> | <input cmd>
+//	<guard list>        ::= <guard elem> {; <guard elem>}
+//	<guard elem>        ::= <boolean expr> | <declaration>
 //
-// Subroutines and Data Representations
+// # Subroutines and Data Representations
 //
 // A coroutine acting as a subroutine is a process operating
 // concurrently with its user process in a prallel command:
 //
-//   [subr::SUBROUTINE||X::USER]
+//	[subr::SUBROUTINE||X::USER]
 //
 // The SUBROUTINE will contain a repetitive command:
 //
-//   *[X?(value params) -> ...; X!(result params)]
+//	*[X?(value params) -> ...; X!(result params)]
 //
 // where ... computes the results from the values input. The subroutine
 // will terminate when its user does. The USER will call subroutine by a
 // pair of commands:
 //
-//   subr!(arguments);...;subr?(results)
+//	subr!(arguments);...;subr?(results)
 //
 // Any commands between these two will be executed concurrently with the
 // subroutine.
 //
 // You can find the paper proposed solution in the comment of a function.
 //
-// Monitors and Scheduling
+// # Monitors and Scheduling
 //
 // A monitor is prepared to communicate with any of its user processes (
 // i.e. whichever of them calls first) it will use a guarded command
@@ -97,7 +97,7 @@ import (
 //
 // Solution:
 //
-//   X :: *[c:character; west?c -> east!c]
+//	X :: *[c:character; west?c -> east!c]
 func S31_COPY(west, east chan rune) {
 	for c := range west {
 		east <- c
@@ -112,12 +112,12 @@ func S31_COPY(west, east chan rune) {
 //
 // Solution:
 //
-//   X :: *[c:character; west?c ->
-//     [ c != asterisk -> east!c
-//      □ c = asterisk -> west?c;
-//            [ c != asterisk -> east!asterisk; east!c
-//             □ c = asterisk -> east!upward arrow
-//     ] ]    ]
+//	X :: *[c:character; west?c ->
+//	  [ c != asterisk -> east!c
+//	   □ c = asterisk -> west?c;
+//	         [ c != asterisk -> east!asterisk; east!c
+//	          □ c = asterisk -> east!upward arrow
+//	  ] ]    ]
 func S32_SQUASH(west, east chan rune) {
 	for {
 		c, ok := <-west
@@ -150,13 +150,13 @@ func S32_SQUASH(west, east chan rune) {
 //
 // Solution:
 //
-//   X :: *[c:character; west?c ->
-//     [ c != asterisk -> east!c
-//      □ c = asterisk -> west?c;
-//            [ c != asterisk -> east!asterisk; east!c
-//             □ c = asterisk -> east!upward arrow
-//            ] □ east!asterisk
-//     ]   ]
+//	X :: *[c:character; west?c ->
+//	  [ c != asterisk -> east!c
+//	   □ c = asterisk -> west?c;
+//	         [ c != asterisk -> east!asterisk; east!c
+//	          □ c = asterisk -> east!upward arrow
+//	         ] □ east!asterisk
+//	  ]   ]
 func S32_SQUASH_EX(west, east chan rune) {
 	for {
 		c, ok := <-west
@@ -191,11 +191,11 @@ func S32_SQUASH_EX(west, east chan rune) {
 //
 // Solution:
 //
-//   *[cardimage:(1..80)characters; cardfile?cardimage ->
-//       i:integer; i := 1;
-//       *[i <= 80 -> X!cardimage(i); i := i+1 ]
-//       X!space
-//   ]
+//	*[cardimage:(1..80)characters; cardfile?cardimage ->
+//	    i:integer; i := 1;
+//	    *[i <= 80 -> X!cardimage(i); i := i+1 ]
+//	    X!space
+//	]
 func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 	cardimage := make([]rune, 0, 80)
 	for tmp := range cardfile {
@@ -229,17 +229,17 @@ func S33_DISASSEMBLE(cardfile chan []rune, X chan rune) {
 //
 // Solution:
 //
-//   lineimage:(1..125)character;
-//   i:integer, i:=1;
-//   *[c:character; X?c ->
-//       lineimage(i) := c;
-//       [i <= 124 -> i := i+1
-//       □ i = 125 -> lineprinter!lineimage; i:=1
-//   ]   ];
-//   [ i = 1 -> skip
-//   □ i > 1 -> *[i <= 125 -> lineimage(i) := space; i := i+1];
-//     lineprinter!lineimage
-//   ]
+//	lineimage:(1..125)character;
+//	i:integer, i:=1;
+//	*[c:character; X?c ->
+//	    lineimage(i) := c;
+//	    [i <= 124 -> i := i+1
+//	    □ i = 125 -> lineprinter!lineimage; i:=1
+//	]   ];
+//	[ i = 1 -> skip
+//	□ i > 1 -> *[i <= 125 -> lineimage(i) := space; i := i+1];
+//	  lineprinter!lineimage
+//	]
 func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 	lineimage := make([]rune, 125)
 
@@ -275,7 +275,7 @@ func S34_ASSEMBLE(X chan rune, lineprinter chan string) {
 //
 // Solution:
 //
-//   [west::DISASSEMBLE||X:COPY||east::ASSEMBLE]
+//	[west::DISASSEMBLE||X:COPY||east::ASSEMBLE]
 func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
 	west, east := make(chan rune), make(chan rune)
 	go S33_DISASSEMBLE(cardfile, west)
@@ -289,7 +289,7 @@ func S35_Reformat(cardfile chan []rune, lineprinter chan string) {
 //
 // Solution:
 //
-//   [west::DISASSEMBLE||X::SQUASH||east::ASSEMBLE]
+//	[west::DISASSEMBLE||X::SQUASH||east::ASSEMBLE]
 func S36_ConwayProblem(cardfile chan []rune, lineprinter chan string) {
 	west, east := make(chan rune), make(chan rune)
 	go S33_DISASSEMBLE(cardfile, west)
@@ -312,12 +312,12 @@ type S41_Out struct {
 //
 // Solution:
 //
-//   [DIV::*[x,y:integer; X?(x,y)->
-//         quot,rem:integer; quot := 0; rem := x;
-//         *[rem >= y -> rem := rem - y; quot := quot + 1;]
-//         X!(quot,rem)
-//         ]
-//   ||X::USER]
+//	[DIV::*[x,y:integer; X?(x,y)->
+//	      quot,rem:integer; quot := 0; rem := x;
+//	      *[rem >= y -> rem := rem - y; quot := quot + 1;]
+//	      X!(quot,rem)
+//	      ]
+//	||X::USER]
 func S41_DivisionWithRemainder(in chan S41_In, out chan S41_Out) {
 	v := <-in
 	x, y := v.X, v.Y
@@ -335,12 +335,12 @@ func S41_DivisionWithRemainder(in chan S41_In, out chan S41_Out) {
 //
 // Solution:
 //
-//   [fac(i:1..limit)::
-//   *[n:integer;fac(i-1)?n ->
-//     [n=0 -> fac(i-1)!1
-//     □ n>0 -> fac(i+1)!n-1;
-//       r:integer; fac(i+1)?r; fac(i-1)!(n*r)
-//   ]] || fac(0)::USER ]
+//	[fac(i:1..limit)::
+//	*[n:integer;fac(i-1)?n ->
+//	  [n=0 -> fac(i-1)!1
+//	  □ n>0 -> fac(i+1)!n-1;
+//	    r:integer; fac(i+1)?r; fac(i-1)!(n*r)
+//	]] || fac(0)::USER ]
 //
 // Note that the solution above from original paper is wrong.
 // Check the code below for some fixes.
@@ -375,20 +375,19 @@ func S42_Factorial(fac []chan int, limit int) {
 //
 // Solution:
 //
-//   S::
-//   content(0..99)integer; size:integer; size := 0;
-//   *[n:integer; X?has(n) -> SEARCH; X!(i<size)
-//   □ n:integer; X?insert(n) -> SEARCH;
-//         [i<size -> skip
-//         □i = size; size<100 ->
-//            content(size) := n; size := size+1
-//   ]]
+//	S::
+//	content(0..99)integer; size:integer; size := 0;
+//	*[n:integer; X?has(n) -> SEARCH; X!(i<size)
+//	□ n:integer; X?insert(n) -> SEARCH;
+//	      [i<size -> skip
+//	      □i = size; size<100 ->
+//	         content(size) := n; size := size+1
+//	]]
 //
 // where SEARCH is an abbreviation for:
 //
-//   i:integer; i := 0;
-//   *[i<size; conent(i) != n -> i:=i+1]
-//
+//	i:integer; i := 0;
+//	*[i<size; conent(i) != n -> i:=i+1]
 type S43_SmallSetOfIntegers struct {
 	content []int
 	size    int
@@ -451,10 +450,9 @@ func (s *S43_SmallSetOfIntegers) Insert(n int, done chan bool) {
 //
 // Solution:
 //
-//   S!scan(); more:boolean; more:=true;
-//   *[more;x:integer;S?next(x)->...deal with x ... .
-//   □ more;S?noneleft()->more:=false]
-//
+//	S!scan(); more:boolean; more:=true;
+//	*[more;x:integer;S?next(x)->...deal with x ... .
+//	□ more;S?noneleft()->more:=false]
 func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 	for _, v := range s.content {
 		recv <- v
@@ -475,18 +473,18 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 //
 // Solution:
 //
-//   S(i:1..100)::
-//   *[n:integer; S(i-1)?has(n)->S(0)!false
-//   □ n:integer; S(i-1)?insert(n)->
-//      *[m:integer; S(i-1)?has(m)->
-//         [m<=n->S(0)!(m=n)
-//         □m>n-->S(i+1)!has(m)
-//       ]
-//      □m:integer; S(i-1)?insert(m)->
-//       [m<n->S(i-1)!insert(m); n:=m
-//       □m=n->skip
-//       □m>n->S(i+1)!insert(m)
-//   ]]]
+//	S(i:1..100)::
+//	*[n:integer; S(i-1)?has(n)->S(0)!false
+//	□ n:integer; S(i-1)?insert(n)->
+//	   *[m:integer; S(i-1)?has(m)->
+//	      [m<=n->S(0)!(m=n)
+//	      □m>n-->S(i+1)!has(m)
+//	    ]
+//	   □m:integer; S(i-1)?insert(m)->
+//	    [m<n->S(i-1)!insert(m); n:=m
+//	    □m=n->skip
+//	    □m>n->S(i+1)!insert(m)
+//	]]]
 //
 // S46_RemoveTheLeastMember implements Section 4.6 Multiple Exits:
 // Remove the Least Member.
@@ -494,14 +492,15 @@ func (s *S43_SmallSetOfIntegers) S44_Scan(recv chan int) {
 // the least member of the set and to remove it from the set. The user
 // program will invoke the facility by a pair of commands:
 //
-//  S(1)!least();[x:integer;S(1)?x-> ... deal with x ...
-//               □S(1)?nonleft()-> ... ]
+//	S(1)!least();[x:integer;S(1)?x-> ... deal with x ...
+//	             □S(1)?nonleft()-> ... ]
 //
 // or if he wishes to scan and empty the set, he may write:
 //
-//  S(1)!least();more:boolean;more:=true;
-//               *[more;xinteger;S(1)?x-> ...deal with x...; S(1)!least())
-//                □ more;S(1)?noneleft()->more:=false]
+//	S(1)!least();more:boolean;more:=true;
+//	             *[more;xinteger;S(1)?x-> ...deal with x...; S(1)!least())
+//	              □ more;S(1)?noneleft()->more:=false]
+//
 // "
 func S45_S46_NewRecursiveSmallSetOfIntegers() (chan S45_Has, chan int, chan chan S46_Least) {
 	// FIXME: this implementation doesn't close all processes
@@ -599,13 +598,13 @@ type S46_Least struct {
 //
 // Solution:
 //
-//   X::
-//   buffer:(0..9)portion;
-//   in,out:integer; in:=0; out := 0;
-//   comment 0 <= out <= in <= out+10;
-//     *[in < out + 10; producer?buffer(in mod 10) -> in := in + 1
-//     □ out < in; consumer?more() -> consumer!buffer(out mod 10);
-//        out := out + 1 ]
+//	X::
+//	buffer:(0..9)portion;
+//	in,out:integer; in:=0; out := 0;
+//	comment 0 <= out <= in <= out+10;
+//	  *[in < out + 10; producer?buffer(in mod 10) -> in := in + 1
+//	  □ out < in; consumer?more() -> consumer!buffer(out mod 10);
+//	     out := out + 1 ]
 func S51_BoundedBuffer() (chan int, chan int) {
 	in, out := 0, 0
 	size := 10
@@ -643,9 +642,9 @@ func S51_BoundedBuffer() (chan int, chan int) {
 //
 // Solution:
 //
-//   S::val:integer; val:=0;
-//   *[(i:1..100)X(i)?V()->val:=val+1
-//   □ (i:1..100)val>0;X(i)?P()->val:=val-1]
+//	S::val:integer; val:=0;
+//	*[(i:1..100)X(i)?V()->val:=val+1
+//	□ (i:1..100)val>0;X(i)?P()->val:=val-1]
 type S52_IntegerSemaphore struct {
 	inc  chan struct{}
 	dec  chan struct{}
@@ -720,29 +719,29 @@ func (s *S52_IntegerSemaphore) Close() {
 //
 // The behavior of the i-th philosopher may be described as follows:
 //
-//   PHIL = *[...during ith lifetime ... ->
-//            THINK;
-//            room!enter();
-//            fork(i)!pickup();fork((i+1)mod5)!pickup();
-//            EAT;
-//            fork(i)!putdown();fork((i+1)mod5)!putdown();
-//            room!next()]
+//	PHIL = *[...during ith lifetime ... ->
+//	         THINK;
+//	         room!enter();
+//	         fork(i)!pickup();fork((i+1)mod5)!pickup();
+//	         EAT;
+//	         fork(i)!putdown();fork((i+1)mod5)!putdown();
+//	         room!next()]
 //
 // The fate of i-th fork is to be picked up and put down by a
 // philosopher sitting on either side of it
 //
-//   FORK = *[phil(i)?pickup()->phil(i)?putdown()
-//          □ phil((i-1)mod5)?pickup()->phil((i-1)mod5)?putdown()]
+//	FORK = *[phil(i)?pickup()->phil(i)?putdown()
+//	       □ phil((i-1)mod5)?pickup()->phil((i-1)mod5)?putdown()]
 //
 // The story of the room may be simply told:
 //
-//   ROOM = occupancy:integer; occupancy := 0;
-//          *[(i:0..4)phil(i)?enter()->occupancy:=occupancy+1
-//          □ (i:0..4)phil(i)?exit()->occupancy:=occupancy-1]
+//	ROOM = occupancy:integer; occupancy := 0;
+//	       *[(i:0..4)phil(i)?enter()->occupancy:=occupancy+1
+//	       □ (i:0..4)phil(i)?exit()->occupancy:=occupancy-1]
 //
 // All these components operate in parallel:
 //
-//   [room::ROOM||fork(i:0..4)::FORK||phil(i:0..4)::PHIL]
+//	[room::ROOM||fork(i:0..4)::FORK||phil(i:0..4)::PHIL]
 func S53_DiningPhilosophers() {
 	// FIXME: may deadlock? mentioned in the exercise
 	size := 5
@@ -816,20 +815,20 @@ func S53_DiningPhilosophers() {
 //
 // Solution:
 //
-//   [SIEVE(i:1..100)::
-//    p,mp:integer;
-//    SIEVE(i-1)?p;
-//    print!p;
-//    mp:=p; comment mp is a multiple of p;
-//   *[m:integer; SIEVE(i-1)?m->
-//      *[m>mp->mp:=mp+p];
-//       [m=mp->skip □ m<mp->SIEVE(i+1)!m ]
-//    ]
-//   || SIEVE(0)::print!2; n:integer; n:=3;
-//         *[n<10000->SIEVE(1)!n;n:=n+2]
-//   || SIEVE(101)::*[n:integer;SIEVE(100)?n->print!n]
-//   || print::*[(i:0..101)n:integer;SIEVE(i)?n->...]
-//   ]
+//	[SIEVE(i:1..100)::
+//	 p,mp:integer;
+//	 SIEVE(i-1)?p;
+//	 print!p;
+//	 mp:=p; comment mp is a multiple of p;
+//	*[m:integer; SIEVE(i-1)?m->
+//	   *[m>mp->mp:=mp+p];
+//	    [m=mp->skip □ m<mp->SIEVE(i+1)!m ]
+//	 ]
+//	|| SIEVE(0)::print!2; n:integer; n:=3;
+//	      *[n<10000->SIEVE(1)!n;n:=n+2]
+//	|| SIEVE(101)::*[n:integer;SIEVE(100)?n->print!n]
+//	|| print::*[(i:0..101)n:integer;SIEVE(i)?n->...]
+//	]
 func S61_TheSieveOfEratosthenes(np int) {
 
 	SIEVE := make([]chan int, np+1)
@@ -906,20 +905,20 @@ func S61_TheSieveOfEratosthenes(np int) {
 // Solution: There are twenty-one nodes, in five groups, comparising the
 // central square and the four borders:
 //
-//   [M(i:1..3,0)::WEST
-//   ||M(0,j:1..3)::NORTH
-//   ||M(i:1..3,4)::EAST
-//   ||M(4,j:1..3)::SOUTH
-//   ||M(i:1..3,j:1..3)::CENTER]
+//	[M(i:1..3,0)::WEST
+//	||M(0,j:1..3)::NORTH
+//	||M(i:1..3,4)::EAST
+//	||M(4,j:1..3)::SOUTH
+//	||M(i:1..3,j:1..3)::CENTER]
 //
 // The WEST and SOUTH borders are processes of the user program; the
 // remaining processes are:
 //
-//   NORTH = *[true -> M(1,j)!0]
-//   EAST = *[x:real; M(i,3)?x->skip]
-//   CENTER = *[x:real;M(i,j-1)?x->
-//             M(i,j+1)!x;sum:real;
-//             M(i-1,j)?sum;M(i+1,j)!(A(i,j)*x+sum)]
+//	NORTH = *[true -> M(1,j)!0]
+//	EAST = *[x:real; M(i,3)?x->skip]
+//	CENTER = *[x:real;M(i,j-1)?x->
+//	          M(i,j+1)!x;sum:real;
+//	          M(i-1,j)?sum;M(i+1,j)!(A(i,j)*x+sum)]
 type S62_Matrix struct {
 	WEST  []chan int // for input
 	SOUTH []chan int // for output

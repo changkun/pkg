@@ -1,4 +1,4 @@
-// +build darwin
+//go:build darwin
 
 // Package appkit provides access to Apple's AppKit API
 // (https://developer.apple.com/documentation/appkit).

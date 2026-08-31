@@ -1,4 +1,4 @@
-// +build darwin
+//go:build darwin
 
 // hellotriangle is an example Metal program that renders a single frame with a triangle.
 // It writes the frame to a triangle.png file in current working directory.

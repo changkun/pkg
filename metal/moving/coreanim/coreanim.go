@@ -1,4 +1,4 @@
-// +build darwin
+//go:build darwin
 
 // Package coreanim provides access to Apple's Core Animation API
 // (https://developer.apple.com/documentation/quartzcore).

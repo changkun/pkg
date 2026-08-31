@@ -1,4 +1,4 @@
-// +build darwin
+//go:build darwin
 
 // movingtriangle is an example Metal program that displays a moving triangle in a window.
 // It opens a window and renders a triangle that follows the mouse cursor.
